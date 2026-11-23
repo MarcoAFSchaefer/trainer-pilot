@@ -103,6 +103,7 @@ With **Try to catch it by itself** on, a failed catch reloads and brings the sam
 
 - What the bot is doing, and why it stopped (gold for good news, red for a problem).
 - The run in numbers: battles, heals, items used, time; targets found and caught when hunting.
+- While hunting, how many of each target the run has found (a shiny that matched no target counts on its own).
 - **Speed while running:** the game speed while the bot runs; your own speed comes back when it stops.
 - **Stop history:** the last 40 stops, with the reason, route, time and place.
 
@@ -124,7 +125,8 @@ The reason is always on the Control tab and in the history. The most common ones
 | --- | --- |
 | Paused: you pressed a button | Click **CONTINUE**. |
 | I don't know where this Center's nurse is | Heal there once by hand. |
-| No Pokémon Center found nearby / Path blocked | Record a healing path from the route to the nurse. |
+| Path blocked | The bot already tried again three times. If it keeps happening at the same place, record a healing path from the route to the nurse; `log/blocked` in the mod's data says what failed. |
+| No Pokémon Center found nearby | Record a healing path from the route to the nurse. |
 | A Repel is active | Wait for it to wear off. |
 | Party and PC are full | Make room in the PC. |
 | No balls in the bag | Buy balls. |

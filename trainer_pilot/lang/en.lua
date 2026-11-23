@@ -71,7 +71,7 @@ return {
   speed = "Speed while running", recording_n = "Recording %s: %d steps",
   history_btn = "Stop history (%d)",
   control_hint1 = "Start from the Training or Hunt tab. Any button or key pauses the bot.",
-  control_hint2 = "CONTINUE resumes where it stopped; FINISH ends the run and clears the numbers.",
+  control_hint2 = "CONTINUE resumes; FINISH ends the run and clears its numbers.",
 
   -- Routes
   recording = "Recording %s", recording_steps = "%d steps. Walk the way and then save.",
@@ -146,4 +146,5 @@ return {
   targets_reset = "Without targets, reset hunting can still stop for any shiny.",
   edit = "edit", new_target = "+ New target", start_hunt = "START HUNT",
   catch_state = "Automatic catching: %s  (set up >)", on_caps = "ON", off_low = "off", reset_btn = "Reset hunting >",
+  more_targets = "+%d more",
 }

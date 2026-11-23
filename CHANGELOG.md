@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.27.0
+
+- A blocked way is tried again up to three times (within half a minute), with every given-up cell, crossing and map link forgotten, before the bot stops. Each one is written to `log/blocked` with where it was heading and what failed.
+- Waits 2 seconds (was 1) on a map edge before giving that crossing up, since the next map can take that long to load at high speed.
+- Control tab: instead of encounters by species, how many of each hunt target the run has found (and shinies that matched no target).
+
 ## 0.26.0
 
 - Control panel in English, Spanish, Portuguese and Japanese (new Language option; English by default), including stop reasons, natures, Hidden Power types and route names.

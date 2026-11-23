@@ -574,6 +574,16 @@ function love.load()
   local canvas = G.newCanvas(panel.W, panel.H)
   local sheet = G.newCanvas(panel.W * 6, panel.H)
   Bot.reason = "shiny"; Bot.config.species[19] = true; Bot.config.selected = { [1] = true, [2] = true }
+  -- what the Control tab shows while hunting: finds per target
+  local savedTargets, savedMode = Bot.config.targets, Bot.mode
+  Bot.config.targets = { { species = 129, name = "Magikarp IV", gender = "any", ivTotal = 0, ivs = {}, ability = 0 },
+    { species = 19, gender = "any", ivTotal = 0, ivs = {}, ability = 0, shiny = true } }
+  Bot.mode, Bot.stats.hits = "hunt", { [1] = 3, shiny = 1 }
+  panel.draw(); panel.pointer("down", 60, 20)
+  G.setCanvas(canvas); G.clear(0, 0, 0, 1); panel.draw(); G.setCanvas()
+  check(panel.lastError == nil, "the Control tab draws the finds per target: " .. tostring(panel.lastError))
+  local ft = io.open(OUT .. "/bot-targets.png", "wb"); ft:write(canvas:newImageData():encode("png"):getString()); ft:close()
+  Bot.config.targets, Bot.mode, Bot.stats.hits = savedTargets, savedMode, {}
   for index, x in ipairs({ 60, 150, 240, 330, 420 }) do
     panel.draw(); panel.pointer("down", x, 20)
     G.setCanvas(canvas); G.clear(0, 0, 0, 1); panel.draw(); G.setCanvas()
@@ -704,6 +714,9 @@ function love.load()
   sim.hasSurf = false
   Bot.start(); runUntil(3000, function() return not Bot.running end)
   check(Bot.reason == "blocked" and count("surf") == 0, "without Surf, a spot across the water is out of reach")
+  local blockedLog = cache["log/blocked"] or ""
+  check(blockedLog:find("|retry 1|", 1, true) and blockedLog:find("|retry 3|", 1, true) and blockedLog:find("|stop|", 1, true),
+    "a blocked way is tried again three times, each written down, before stopping: " .. blockedLog:sub(1, 200))
   sim.hasSurf = true
   Bot.start(); runUntil(8000, function() return count("fished") >= 2 end)
   check(Bot.running and count("surf") >= 1 and count("fished") >= 2 and P.cellX == 12 and P.cellY == 5 and not P.surfing, "with Surf it crosses the water and carries on (" .. count("surf") .. " surf, " .. count("fished") .. " hooked)")
@@ -761,6 +774,7 @@ function love.load()
   local function wildWith(extra) local w = mon(129, 5, 20, extra); Bot.start("hunt"); startBattle(true, w); runUntil(2000, function() return not battle.active or not Bot.running end) end
   wildWith({ gender = "F", ivs = { hp = 25, atk = 5, def = 5, spe = 31, spa = 31, spd = 3 } })
   check(Bot.reason == "hunt_found" and battle.active and count("run") == 0, "a wild one that fits every condition stops the bot with the battle open")
+  check(Bot.stats.hits and Bot.stats.hits[1] == 1, "the find is counted for the target it matched")
   endBattle()
   wildWith({ gender = "M", ivs = { hp = 25, atk = 5, def = 5, spe = 31, spa = 31, spd = 3 } })
   check(Bot.running and count("run") == 1, "wrong gender: not a target, and it runs")

@@ -136,4 +136,5 @@ return {
   targets_reset = "Sem alvos, a caça por reset ainda pode parar em qualquer shiny.",
   edit = "editar", new_target = "+ Novo alvo", start_hunt = "INICIAR CAÇA",
   catch_state = "Captura automática: %s  (configurar >)", on_caps = "LIGADA", off_low = "desligada", reset_btn = "Caça por reset >",
+  more_targets = "+%d outros",
 }

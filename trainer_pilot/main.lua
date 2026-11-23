@@ -542,11 +542,11 @@ return function(mod)
       release()
       blockedSince = blockedSince or mark()
       -- someone walking by may be in the way for a moment
-      if late(blockedSince, 300, 4) then return "blocked" end
+      if late(blockedSince, 300, 4) then Bot.blockedWhy = ("no path to %s,%s"):format(tx, ty) return "blocked" end
       return "walking"
     end
     blockedSince = nil
-    if not advance(step, action) then return "blocked" end
+    if not advance(step, action) then Bot.blockedWhy = "field move failed: " .. tostring(action) return "blocked" end
     return "walking"
   end
   function face(dir)
@@ -841,8 +841,9 @@ return function(mod)
       end
       return walkTo(tx, ty, beside)
     end
+    Bot.trip = ("%s %s,%s"):format(tostring(tmap), tostring(tx), tostring(ty))
     local hop = planHop(map, function(id) return id == tmap end, tmap)
-    if not hop then release() return "blocked" end
+    if not hop then release() Bot.blockedWhy = "no map route from " .. tostring(map) return "blocked" end
     if hop.kind == "warp" then
       -- through a door, a cave mouth, a stair: any of this map's warps that lead there
       local def = mapDef(map)
@@ -876,12 +877,12 @@ return function(mod)
         return "walking"
       end
       travelState.doorSince = nil
-      if not advance(step, action) then return "blocked" end
+      if not advance(step, action) then Bot.blockedWhy = "field move failed: " .. tostring(action) return "blocked" end
       return "walking"
     end
     local dir, via = FROM_CARDINAL[hop.dir], hop.to
     local def = mapDef(map)
-    if not (dir and def and h.Conn) then release() return "blocked" end
+    if not (dir and def and h.Conn) then release() Bot.blockedWhy = "no edge toward " .. tostring(via) return "blocked" end
     local w, hgt = h.Conn.sizeOf(def)
     local known = via and crossings[map .. ">" .. via]
     if known and travelState.bad[map .. ":" .. known.x .. ":" .. known.y] then known = nil end
@@ -899,7 +900,8 @@ return function(mod)
       if travelState.cell ~= here or Bot.stats.ticks - (travelState.seen or 0) > 2 then travelState.since = nil end
       travelState.cell, travelState.seen = here, Bot.stats.ticks
       travelState.since = travelState.since or mark()
-      if late(travelState.since, 60, 1) then
+      -- give it 2 seconds: at high speed the next map can take that long to load
+      if late(travelState.since, 90, 2) then
         travelState.bad[map .. ":" .. x .. ":" .. y], travelState.since = true, nil
       end
       hold(dir)
@@ -915,12 +917,25 @@ return function(mod)
     if not step or step == "here" then
       release()
       blockedSince = blockedSince or mark()
-      if late(blockedSince, 300, 4) then return "blocked" end
+      if late(blockedSince, 300, 4) then
+        local bad = 0
+        for k in pairs(travelState.bad) do if k:find(map .. ":", 1, true) == 1 then bad = bad + 1 end end
+        Bot.blockedWhy = ("no path to the %s edge toward %s (known crossing %s, %d cells given up)"):format(
+          dir, tostring(via), known and (known.x .. "," .. known.y) or "none", bad)
+        return "blocked"
+      end
       return "walking"
     end
     blockedSince = nil
-    if not advance(step, action) then return "blocked" end
+    if not advance(step, action) then Bot.blockedWhy = "field move failed: " .. tostring(action) return "blocked" end
     return "walking"
+  end
+  -- Forget what travelling has given up on (cells, links, doors, walks worked
+  -- out): a way that was blocked a moment ago may be open now.
+  function Bot.resetTravel()
+    travelState = { bad = {} }
+    badLinks, planCache, pathCache, portalMemo = {}, {}, {}, {}
+    blockedSince = nil
   end
 
   ---------------------------------------------------------------------------
@@ -1300,7 +1315,39 @@ return function(mod)
   end
   Bot.historyLoad = historyLoad
   pcall(historyLoad)
+  -- A "blocked" stop is retried up to three times (within half a minute) with
+  -- everything travelling had given up on forgotten: people walking by, a map
+  -- still loading or a crossing judged too early were behind most of them.
+  -- Every one is written to log/blocked to be looked into.
+  local blockedTries = nil
+  local function noteBlocked(outcome)
+    pcall(function()
+      local map, x, y = position()
+      local line = ("%d|%s|%s|%s|%s|%s|%s|%s"):format(os.time(), outcome, tostring(run and run.phase), tostring(map), tostring(x), tostring(y),
+        tostring(Bot.trip), (tostring(Bot.blockedWhy or "?"):gsub("[|\n]", " ")))
+      local old = cacheRead("log/blocked") or ""
+      local lines = { line }
+      for entry in old:gmatch("[^\n]+") do
+        if #lines >= 30 then break end
+        lines[#lines + 1] = entry
+      end
+      cacheWrite("log/blocked", table.concat(lines, "\n"))
+    end)
+  end
   function Bot.stop(reason)
+    if reason == "blocked" and Bot.running then
+      local now = love.timer.getTime()
+      if not blockedTries or now - blockedTries.at > 30 then blockedTries = { count = 0 } end
+      if blockedTries.count < 3 then
+        blockedTries.count, blockedTries.at = blockedTries.count + 1, now
+        noteBlocked("retry " .. blockedTries.count)
+        release()
+        Bot.resetTravel()
+        return
+      end
+      noteBlocked("stop")
+      blockedTries = nil
+    end
     release()
     if Bot.evOn and (reason == "level" or reason == "level_healed") then
       -- it was the EVs that were reached, not a level
@@ -1341,7 +1388,7 @@ return function(mod)
     local stats = Bot.stats
     stats.resets, stats.itemsHp, stats.itemsPp = nil, 0, 0
     stats.battles, stats.heals, stats.seeker, stats.seen = 0, 0, 0, {}
-    stats.caught, stats.lost, stats.found, stats.safariEntries = 0, 0, 0, nil
+    stats.caught, stats.lost, stats.found, stats.safariEntries, stats.hits = 0, 0, 0, nil, {}
     stats.startedAt, stats.endedAt = nil, nil
     return true
   end
@@ -1409,7 +1456,7 @@ return function(mod)
       Bot.stats.startedAt = Bot.stats.startedAt + (love.timer.getTime() - (Bot.stats.endedAt or love.timer.getTime()))
     else
       Bot.stats.battles, Bot.stats.heals, Bot.stats.seeker, Bot.stats.seen = 0, 0, 0, {}
-      Bot.stats.caught, Bot.stats.lost, Bot.stats.found = 0, 0, 0
+      Bot.stats.caught, Bot.stats.lost, Bot.stats.found, Bot.stats.hits = 0, 0, 0, {}
       Bot.stats.resets = mode == "reset" and 0 or nil
       Bot.stats.itemsHp, Bot.stats.itemsPp = 0, 0
       Bot.stats.startedAt = love.timer.getTime()
@@ -1439,6 +1486,18 @@ return function(mod)
     return c.huntShiny and try(h.Pokemon.isShiny, mon) == true
   end
   Bot.wanted = wanted
+  -- A target found: counted in the run, and by which target it matched (the
+  -- first one, by its place in the list; "shiny" for a shiny that matched none).
+  local function countFound(mon)
+    local stats = Bot.stats
+    stats.found = (stats.found or 0) + 1
+    stats.hits = stats.hits or {}
+    local key = "shiny"
+    for index, target in ipairs(Bot.config.targets) do
+      if Bot.matches(mon, target) then key = index break end
+    end
+    stats.hits[key] = (stats.hits[key] or 0) + 1
+  end
   local function partyCount()
     local s = session()
     return s and type(s.party) == "table" and #s.party or 0
@@ -1519,7 +1578,7 @@ return function(mod)
       Bot.stats.seen = Bot.stats.seen or {}
       if species then Bot.stats.seen[species] = (Bot.stats.seen[species] or 0) + 1 end
       if wanted(mon) then
-        Bot.stats.found = (Bot.stats.found or 0) + 1
+        countFound(mon)
         return Bot.stop("hunt_found")
       end
       return askReload()
@@ -1743,7 +1802,7 @@ return function(mod)
       end
       if species and not again then Bot.stats.seen[species] = (Bot.stats.seen[species] or 0) + 1 end
       if not wanted(foe) then return askReload() end
-      if not again then Bot.stats.found = (Bot.stats.found or 0) + 1 end
+      if not again then countFound(foe) end
       if not c.resetCatch then return Bot.stop("hunt_found") end
       -- a repeated attempt waits a little longer each time, so the battle does not play out the same
       run.catching = { foe = foe, statusTries = 0, thrown = 0, holdUntil = Bot.stats.ticks + (r.tries or 0) * 13 }
@@ -1766,14 +1825,17 @@ return function(mod)
           if Bot.matches(foe, target) then
             if not run.counted then
               run.counted = true
-              Bot.stats.found = (Bot.stats.found or 0) + 1
+              countFound(foe)
             end
             if not c.huntCatch then return Bot.stop("hunt_found") end
             run.catching = { foe = foe, statusTries = 0, thrown = 0 }
           end
         end
         if run.catching then return end
-        if c.huntShiny and try(h.Pokemon.isShiny, foe) == true then return Bot.stop("shiny") end
+        if c.huntShiny and try(h.Pokemon.isShiny, foe) == true then
+          if not run.counted then run.counted = true countFound(foe) end
+          return Bot.stop("shiny")
+        end
         run.huntRun = not c.huntExp
       end
       -- the training stops (shiny, listed species) are not the hunt's: a hunt has its targets

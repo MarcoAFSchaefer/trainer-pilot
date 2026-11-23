@@ -136,4 +136,5 @@ return {
   targets_reset = "ターゲットがなくても、リセット厳選は色違いで止まれます。",
   edit = "編集", new_target = "+ 新しいターゲット", start_hunt = "厳選スタート",
   catch_state = "自動捕獲: %s  (設定 >)", on_caps = "オン", off_low = "オフ", reset_btn = "リセット厳選 >",
+  more_targets = "ほか%d",
 }

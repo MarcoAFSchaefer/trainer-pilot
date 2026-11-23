@@ -360,15 +360,30 @@ return function(mod, Bot, I18n)
       box(10, 326, 460, 40, mix(C.card, C.stop, 0.6), 8)
       text(F("recording_n", KIND[rec.kind], #rec.points), 22, 338, C.text, 13)
     else
-      local seen = {}
-      for species, count in pairs(stats.seen or {}) do seen[#seen + 1] = { id = species, count = count } end
-      table.sort(seen, function(a, b) return a.count > b.count end)
-      if #seen > 0 then
+      -- how many of each target this run has found (hunting and reset hunting)
+      local hits, list = stats.hits or {}, {}
+      if Bot.mode == "hunt" or Bot.mode == "reset" or next(hits) then
+        for index, target in ipairs(c.targets) do
+          list[#list + 1] = { species = target.species, shiny = target.shiny, count = hits[index] or 0,
+            name = target.name or (target.species ~= 0 and speciesName(target.species) or T("any")) }
+        end
+        if (hits.shiny or 0) > 0 then list[#list + 1] = { species = 0, shiny = true, count = hits.shiny, name = T("shiny_caps") } end
+        table.sort(list, function(a, b) return a.count > b.count end)
+      end
+      if #list > 0 then
         box(10, 326, 460, 40, C.card, 8)
-        for index = 1, min(6, #seen) do
-          local x = 16 + (index - 1) * 75
-          speciesIcon(seen[index].id, x, 330, 32)
-          text(seen[index].count, x + 34, 338, C.text, 13)
+        local shown = min(4, #list)
+        for index = 1, shown do
+          local entry, x = list[index], 16 + (index - 1) * 114
+          if index == 4 and #list > 4 then
+            text(F("more_targets", #list - 3), x + 4, 338, C.muted, 12)
+            break
+          end
+          if entry.species ~= 0 then speciesIcon(entry.species, x, 330, 32, entry.count == 0) end
+          local count = tostring(entry.count)
+          local nx = x + (entry.species ~= 0 and 34 or 2)
+          line(count, nx, 329, entry.count > 0 and C.gold or C.muted, 14, x + 108 - nx, "right")
+          line(entry.name, nx, 346, entry.count > 0 and C.text or C.muted, 11, x + 108 - nx)
         end
       end
     end
