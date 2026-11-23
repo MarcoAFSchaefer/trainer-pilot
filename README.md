@@ -54,6 +54,7 @@ Each language is a file in `trainer_pilot/lang/` (`en.lua`, `es.lua`, `pt.lua`, 
 
 ## Documentation
 
+- [docs/GUIDE.md](docs/GUIDE.md): player guide, routes, training, EV training, hunting and reset hunting, step by step.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the bot is organised, its main loop and hooks.
 - [docs/DATA.md](docs/DATA.md): settings, saved data formats and stop reasons.
 - [docs/ENGINE_NOTES.md](docs/ENGINE_NOTES.md): the game functions the bot relies on and the pitfalls found on the way.
