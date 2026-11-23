@@ -14,6 +14,13 @@ A training and hunting bot for Pokémon FireRed/LeafGreen on Gen1Recomp (mod API
 
 It will not start on a grass route with a Repel active, and stops if a Repel is used during the run. It stops by itself when it runs out of balls or when the party and PC are full.
 
+## Compatibility
+
+| | |
+| --- | --- |
+| Games | FireRed and LeafGreen |
+| Gen1Recomp | 0.3.93 or newer (mod API 3); tested on 0.4.8 |
+
 ## Installation
 
 Copy the `trainer_pilot` folder into the game's mods folder:

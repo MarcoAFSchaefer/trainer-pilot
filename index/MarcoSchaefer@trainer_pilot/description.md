@@ -14,4 +14,4 @@ The control panel lives in **Trainer Desk**, so that mod is needed to use it. Pa
 
 **Known limits:** puzzle caves (Victory Road, Seafoam Islands and a few more) are never crossed; in double battles only the first opponent is targeted; item healing restores HP and PP but not status.
 
-Tested on FireRed; LeafGreen shares the same engine paths but has not been played with it yet.
+Tested on FireRed and LeafGreen with Gen1Recomp 0.4.8.
