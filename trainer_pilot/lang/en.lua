@@ -147,4 +147,5 @@ return {
   edit = "edit", new_target = "+ New target", start_hunt = "START HUNT",
   catch_state = "Automatic catching: %s  (set up >)", on_caps = "ON", off_low = "off", reset_btn = "Reset hunting >",
   more_targets = "+%d more",
+  routes_all = "All", routes_near = "Nearby", no_routes_near = "No route on this map or the ones next to it",
 }

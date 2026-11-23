@@ -131,6 +131,11 @@ return function(mod)
   local function cacheRead(key)
     return mod.cache and mod.cache.read and mod.cache:read(key) or nil
   end
+  -- A way given up on during a trip, written to log/blocked (see noteBlocked).
+  function Bot.note(why)
+    Bot.blockedWhy = why
+    if Bot.noteBlocked then Bot.noteBlocked("gave up") end
+  end
   local function cacheWrite(key, text)
     if mod.cache and mod.cache.write then mod.cache:write(key, text) end
   end
@@ -358,8 +363,10 @@ return function(mod)
     return behavior ~= nil and try(h.Collision.isWarpMetatileBehavior, behavior) == true
   end
   -- The first direction of a shortest walk to (tx, ty), or to any cell next
-  -- to it when `beside` is set. nil when there is no way.
-  local pathCache = {}        -- the last walk worked out: { id, next = { [cell] = dir }, at }
+  -- to it when `beside` is set. nil when there is no way; then pathCache.hard
+  -- says whether there is no way at all (true), or only someone standing in it.
+  local pathCache = {}        -- the last walk worked out: { id, next = { [cell] = dir }, at, failed, hard }
+  local throughPeople = false -- while set, a person or object in the way counts as walkable
   local function pathStep(tx, ty, beside, goal, goalId)
     local h = host()
     local C, P = h.Collision, h.P
@@ -401,7 +408,8 @@ return function(mod)
             and Bot.canUse("SURF") then action = "surf"
         elseif why == "entity" then
           local kind = Bot.obstacleAt(nx, ny)
-          if kind == "cut" and Bot.canUse("CUT") then action = "cut"
+          if not kind and throughPeople then action = nil
+          elseif kind == "cut" and Bot.canUse("CUT") then action = "cut"
           elseif kind == "rock_smash" and Bot.canUse("ROCK_SMASH") then action = "rock_smash"
           elseif kind == "strength" and Bot.canUse("STRENGTH") then
             -- a boulder moves only if the cell behind it is free ground
@@ -463,6 +471,23 @@ return function(mod)
       head = head + 1
     end
     pathCache.failed = true
+    -- no way: is it only someone in the way? Search again walking through people
+    throughPeople = true
+    local seen2, queue2, head2, open = { [key(sx, sy)] = true }, { { sx, sy, P.currentElevation, P.surfing == true } }, 1, false
+    while queue2[head2] and head2 < 8000 and not open do
+      local node = queue2[head2]
+      for _, dir in ipairs(DIRS) do
+        local nx, ny, onWater = enter(node[1], node[2], dir, node[3], node[4])
+        if nx and not seen2[key(nx, ny)] then
+          seen2[key(nx, ny)] = true
+          if done(nx, ny) then open = true break end
+          queue2[#queue2 + 1] = { nx, ny, elevationOf(h, nx, ny, node[3]), onWater }
+        end
+      end
+      head2 = head2 + 1
+    end
+    throughPeople = false
+    pathCache.hard = not open
     return nil
   end
   -- What the team can do on the field, asked of the game at most twice a second.
@@ -540,9 +565,10 @@ return function(mod)
     end
     if not step then
       release()
+      -- no way at all: say so at once; only a person in the way is worth waiting for
+      if pathCache.hard then Bot.blockedWhy = ("no way to %s,%s from %s,%s"):format(tx, ty, h.P.cellX, h.P.cellY) return "blocked" end
       blockedSince = blockedSince or mark()
-      -- someone walking by may be in the way for a moment
-      if late(blockedSince, 300, 4) then Bot.blockedWhy = ("no path to %s,%s"):format(tx, ty) return "blocked" end
+      if late(blockedSince, 300, 4) then Bot.blockedWhy = ("someone stays in the way to %s,%s"):format(tx, ty) return "blocked" end
       return "walking"
     end
     blockedSince = nil
@@ -655,6 +681,53 @@ return function(mod)
     return hop, found
   end
   Bot.planHop = planHop
+  -- How far each map is from `from`, by the map of links (0 = this map; an
+  -- edge counts 1, a door, cave or stair 3), and the maps right next to it.
+  local distCache = {}
+  function Bot.mapDistances(from)
+    if distCache.from == from and love.timer.getTime() - distCache.at < 2 then return distCache.dist, distCache.near end
+    local dist, done, near = { [from] = 0 }, {}, { [from] = true }
+    for _, link in ipairs(mapLinks(from)) do near[link.to] = true end
+    for _ = 1, 800 do
+      local at, best
+      for id, d in pairs(dist) do
+        if not done[id] and (not best or d < best) then at, best = id, d end
+      end
+      if not at then break end
+      done[at] = true
+      for _, link in ipairs(mapLinks(at)) do
+        local d = best + link.cost
+        if not dist[link.to] or d < dist[link.to] then dist[link.to] = d end
+      end
+    end
+    distCache = { from = from, at = love.timer.getTime(), dist = dist, near = near }
+    return dist, near
+  end
+  -- The recorded routes, nearest first (a route on this map by how far its
+  -- first point is from the player); with onlyNear, just this map and the ones next to it.
+  function Bot.sortedRoutes(onlyNear)
+    local map, x, y = position()
+    local dist, near = {}, {}
+    if map then dist, near = Bot.mapDistances(map) end
+    local list = {}
+    for index, route in ipairs(Bot.routes) do
+      local first = route.points[1]
+      local rmap = first and first.map
+      if not onlyNear or (rmap and near[rmap]) then
+        local d = rmap and dist[rmap] or math.huge
+        local cells = (rmap == map and first and x) and (abs(first.x - x) + abs(first.y - y)) or 0
+        list[#list + 1] = { route = route, d = d, cells = cells, index = index }
+      end
+    end
+    table.sort(list, function(a, b)
+      if a.d ~= b.d then return a.d < b.d end
+      if a.cells ~= b.cells then return a.cells < b.cells end
+      return a.index < b.index
+    end)
+    local out = {}
+    for i, entry in ipairs(list) do out[i] = entry.route end
+    return out
+  end
   -- Cells where the player has crossed from one map to the next before: the
   -- place to cross again, rather than trying the whole edge cell by cell.
   local CROSS_KEY = "crossings/v1"
@@ -831,6 +904,8 @@ return function(mod)
     local viaPortal = throughPortal()
     if viaPortal then return viaPortal end
     local map, x, y = position()
+    -- links given up on were out of reach from one part of one map: on another map they may not be
+    if travelState.onMap ~= map then travelState.onMap, badLinks, planCache = map, {}, {} end
     if map == tmap then
       travelState.since = nil
       if not pathStep(tx, ty, beside) then
@@ -869,10 +944,12 @@ return function(mod)
       local step, action = pathStep(nil, nil, false, door, "door:" .. hop.to)
       if not step or step == "here" then
         -- no door to that map can be walked to: this link is no use from here, plan around it
+        -- (at once when there is no way at all; a moment when someone may be standing there)
         release()
         travelState.doorSince = travelState.doorSince or mark()
-        if late(travelState.doorSince, 60, 1) then
+        if pathCache.hard or late(travelState.doorSince, 60, 1) then
           badLinks[map .. ">" .. hop.to], planCache, travelState.doorSince = true, {}, nil
+          Bot.note("door to " .. tostring(hop.to) .. " out of reach from " .. x .. "," .. y)
         end
         return "walking"
       end
@@ -914,6 +991,14 @@ return function(mod)
       travelState.bad[map .. ":" .. known.x .. ":" .. known.y] = true
     end
     if not step and tryPortal(edge, "edge:" .. dir) then return "walking" end
+    if not step and pathCache.hard and not known then
+      -- this edge cannot be walked to from where the player is (a ledge, a cave
+      -- between): that link is no use from here, so plan the trip around it
+      release()
+      badLinks[map .. ">" .. via], planCache = true, {}
+      Bot.note("link " .. map .. ">" .. tostring(via) .. " out of reach from " .. x .. "," .. y)
+      return "walking"
+    end
     if not step or step == "here" then
       release()
       blockedSince = blockedSince or mark()
@@ -1315,11 +1400,8 @@ return function(mod)
   end
   Bot.historyLoad = historyLoad
   pcall(historyLoad)
-  -- A "blocked" stop is retried up to three times (within half a minute) with
-  -- everything travelling had given up on forgotten: people walking by, a map
-  -- still loading or a crossing judged too early were behind most of them.
-  -- Every one is written to log/blocked to be looked into.
-  local blockedTries = nil
+  -- Every "blocked" stop, and every way given up on the way (Bot.note), goes
+  -- to log/blocked with where the bot was heading and what failed.
   local function noteBlocked(outcome)
     pcall(function()
       local map, x, y = position()
@@ -1334,20 +1416,9 @@ return function(mod)
       cacheWrite("log/blocked", table.concat(lines, "\n"))
     end)
   end
+  Bot.noteBlocked = noteBlocked
   function Bot.stop(reason)
-    if reason == "blocked" and Bot.running then
-      local now = love.timer.getTime()
-      if not blockedTries or now - blockedTries.at > 30 then blockedTries = { count = 0 } end
-      if blockedTries.count < 3 then
-        blockedTries.count, blockedTries.at = blockedTries.count + 1, now
-        noteBlocked("retry " .. blockedTries.count)
-        release()
-        Bot.resetTravel()
-        return
-      end
-      noteBlocked("stop")
-      blockedTries = nil
-    end
+    if reason == "blocked" and Bot.running then noteBlocked("stop") end
     release()
     if Bot.evOn and (reason == "level" or reason == "level_healed") then
       -- it was the EVs that were reached, not a level
@@ -2306,8 +2377,11 @@ return function(mod)
   local function findCenter()
     local start = position()
     local here = centerDoor(start)
-    if here then return here end
-    local _, found = planHop(start, function(id) return centerDoor(id) ~= nil end, "center")
+    -- a Center on this map counts only if it can be walked to from here: Route 4's
+    -- is on the other side of Mt. Moon from its east end, for one
+    if here and pathStep(here.x, here.y) then return here end
+    if here then Bot.note("the Center on " .. start .. " is out of reach from here") end
+    local _, found = planHop(start, function(id) return id ~= start and centerDoor(id) ~= nil end, "center")
     return found and centerDoor(found) or nil
   end
   -- Where the player stood when a Center healed the team, remembered per Center.

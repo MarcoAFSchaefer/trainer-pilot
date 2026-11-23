@@ -10,7 +10,7 @@ Everything is stored with `mod.cache` under `%APPDATA%\pokemon-love2d\mod_cache\
 | `nurses/v1` | Where to stand in front of the nurse, per Pokémon Center. |
 | `log/last` | The last stop, for diagnosis. |
 | `log/history` | The last 40 stops. |
-| `log/blocked` | The last 30 times a way was blocked, retried or not. |
+| `log/blocked` | The last 30 ways given up on, and blocked stops. |
 
 ## routes/v1
 
@@ -110,7 +110,7 @@ Newest first, one stop per line: `at|reason|mode|route|map|x|y|battles|seconds|f
 
 ## log/blocked
 
-Newest first: `at|outcome|phase|map|x|y|trip|why`. `outcome` is `retry 1` to `retry 3` (the bot forgot what travelling had given up on and went on) or `stop`; `trip` is where it was heading (`MAP x,y`); `why` says what failed, such as the edge it could not reach and the crossing it knew.
+Newest first: `at|outcome|phase|map|x|y|trip|why`. `outcome` is `gave up` (a way found out of reach, such as a map edge, a door or a Pokémon Center on the far side of a cave; the bot planned around it and went on) or `stop`; `trip` is where it was heading (`MAP x,y`); `why` says what failed.
 
 ## Stop reasons
 

@@ -574,6 +574,22 @@ function love.load()
   local canvas = G.newCanvas(panel.W, panel.H)
   local sheet = G.newCanvas(panel.W * 6, panel.H)
   Bot.reason = "shiny"; Bot.config.species[19] = true; Bot.config.selected = { [1] = true, [2] = true }
+  -- the Routes tab: nearest first, and only the nearby ones on request
+  do
+    local savedRoutes = Bot.routes
+    local saveMap, sx, sy = Map.current, P.cellX, P.cellY
+    Map.current, session.map, P.cellX, P.cellY = "MAP_ROUTE2", "MAP_ROUTE2", 2, 2
+    local function r(name, map, x, y) return { name = name, kind = "grass", points = { { map = map, x = x, y = y, dir = "up" } } } end
+    Bot.routes = { r("far cave", "MAP_ROUTE3", 1, 2), r("route 1", "MAP_ROUTE1", 3, 3), r("here far", "MAP_ROUTE2", 5, 6), r("here near", "MAP_ROUTE2", 2, 3) }
+    local names = {}
+    for _, route in ipairs(Bot.sortedRoutes(false)) do names[#names + 1] = route.name end
+    check(table.concat(names, ",") == "here near,here far,route 1,far cave", "routes are listed nearest first: " .. table.concat(names, ","))
+    names = {}
+    for _, route in ipairs(Bot.sortedRoutes(true)) do names[#names + 1] = route.name end
+    check(table.concat(names, ",") == "here near,here far,route 1", "Nearby keeps this map and the ones next to it: " .. table.concat(names, ","))
+    Bot.routes = savedRoutes
+    Map.current, session.map, P.cellX, P.cellY = saveMap, saveMap, sx, sy
+  end
   -- what the Control tab shows while hunting: finds per target
   local savedTargets, savedMode = Bot.config.targets, Bot.mode
   Bot.config.targets = { { species = 129, name = "Magikarp IV", gender = "any", ivTotal = 0, ivs = {}, ability = 0 },
@@ -715,8 +731,8 @@ function love.load()
   Bot.start(); runUntil(3000, function() return not Bot.running end)
   check(Bot.reason == "blocked" and count("surf") == 0, "without Surf, a spot across the water is out of reach")
   local blockedLog = cache["log/blocked"] or ""
-  check(blockedLog:find("|retry 1|", 1, true) and blockedLog:find("|retry 3|", 1, true) and blockedLog:find("|stop|", 1, true),
-    "a blocked way is tried again three times, each written down, before stopping: " .. blockedLog:sub(1, 200))
+  check(blockedLog:find("|stop|", 1, true) and blockedLog:find("no way to", 1, true) and not blockedLog:find("retry", 1, true),
+    "with no way at all it stops at once, and writes down why: " .. blockedLog:sub(1, 200))
   sim.hasSurf = true
   Bot.start(); runUntil(8000, function() return count("fished") >= 2 end)
   check(Bot.running and count("surf") >= 1 and count("fished") >= 2 and P.cellX == 12 and P.cellY == 5 and not P.surfing, "with Surf it crosses the water and carries on (" .. count("surf") .. " surf, " .. count("fished") .. " hooked)")

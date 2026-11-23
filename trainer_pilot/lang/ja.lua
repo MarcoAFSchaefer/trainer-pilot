@@ -137,4 +137,5 @@ return {
   edit = "編集", new_target = "+ 新しいターゲット", start_hunt = "厳選スタート",
   catch_state = "自動捕獲: %s  (設定 >)", on_caps = "オン", off_low = "オフ", reset_btn = "リセット厳選 >",
   more_targets = "ほか%d",
+  routes_all = "すべて", routes_near = "近く", no_routes_near = "このマップと となりのマップにルートはありません",
 }

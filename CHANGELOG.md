@@ -1,10 +1,18 @@
 # Changelog
 
-## 0.27.0
+## 0.28.0
 
-- A blocked way is tried again up to three times (within half a minute), with every given-up cell, crossing and map link forgotten, before the bot stops. Each one is written to `log/blocked` with where it was heading and what failed.
+- Walking decides at once instead of waiting: when there is no way to a place at all (a ledge, a cave in between), the bot plans around it straight away; it only waits, 4 seconds at most, when a person is standing in the way. The 0.27.0 retries are gone.
+- A Pokémon Center on the same map that cannot be walked to (Route 4's, from the east of Mt. Moon) is skipped for the next nearest one.
+- Map links given up on are forgotten when the player changes map.
+- Routes tab: routes listed nearest first (this map, by distance, then by how many maps away), with an **All** / **Nearby** filter (this map and the ones right next to it).
+- `log/blocked` now also lists every way given up on during a trip.
+
+## 0.27.0 (not released)
+
+- Control tab: how many of each hunt target the run has found, instead of encounters by species.
 - Waits 2 seconds (was 1) on a map edge before giving that crossing up, since the next map can take that long to load at high speed.
-- Control tab: instead of encounters by species, how many of each hunt target the run has found (and shinies that matched no target).
+- `log/blocked`: every blocked stop, with where the bot was heading and what failed.
 
 ## 0.26.0
 

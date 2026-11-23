@@ -393,6 +393,7 @@ return function(mod, Bot, I18n)
   end
 
   local ROUTES_PER_PAGE = 4
+  local routesNear = false   -- Routes tab: only this map and the ones next to it
   local function drawRoutes()
     local c, rec = Bot.config, Bot.recording
     if rec then
@@ -413,10 +414,13 @@ return function(mod, Bot, I18n)
       button(KIND.scent, 168, 136, 140, 26, C.off, function() Bot.markSpot("scent") end, 12)
       button(KIND.seeker, 314, 136, 144, 26, C.off, function() Bot.markSpot("seeker") end, 12)
     end
-    local pages = max(1, math.ceil(#Bot.routes / ROUTES_PER_PAGE))
+    -- nearest first; "Nearby" keeps this map and the ones right next to it
+    local list = Bot.sortedRoutes(routesNear)
+    local pages = max(1, math.ceil(#list / ROUTES_PER_PAGE))
     routePage = max(1, min(pages, routePage))
+    if #list == 0 and #Bot.routes > 0 then centred(T("no_routes_near"), 10, 230, 460, 40, C.muted, 12) end
     for row = 1, ROUTES_PER_PAGE do
-      local route = Bot.routes[(routePage - 1) * ROUTES_PER_PAGE + row]
+      local route = list[(routePage - 1) * ROUTES_PER_PAGE + row]
       if route then
         local y = 182 + (row - 1) * 40
         local chosen = picked == route.name
@@ -443,6 +447,8 @@ return function(mod, Bot, I18n)
     if c.heal then
       button(T("auto_heal"), 10, 388, 220, 28, C.off, function() c.heal = nil save() end, 12)
     end
+    button(T("routes_all"), 250, 390, 104, 24, not routesNear and C.accent or C.off, function() routesNear, routePage = false, 1 end, 11)
+    button(T("routes_near"), 358, 390, 104, 24, routesNear and C.accent or C.off, function() routesNear, routePage = true, 1 end, 11)
     pager(470, 352, 30, routePage, pages, function(page) routePage = page end)
   end
 

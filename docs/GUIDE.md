@@ -31,6 +31,8 @@ The **Control** tab now shows what the bot is doing. Press any button to pause i
 | Sweet Scent | Stand in grass, *Mark the spot* > **Sweet Scent**. | Calls wild Pokémon with Sweet Scent without walking. |
 | Healing path | *Record by walking* > **Healing path**, from the route to the nurse. | Uses that path to heal instead of finding the Center by itself. |
 
+The list shows the nearest routes first: those on the map you are on (closest first), then the others by how many maps away they are. **Nearby** keeps only this map and the maps right next to it; **All** shows every route.
+
 Only make a healing path where the bot cannot find the way alone, such as inside puzzle caves. Elsewhere it walks to the nearest Pokémon Center by itself, using Surf, Cut, Rock Smash, Strength and Waterfall on the way when your party can.
 
 **The first time in a Pokémon Center** the bot may not know where the nurse stands. If it stops with that message, heal there once by hand; it learns the spot.
@@ -125,7 +127,7 @@ The reason is always on the Control tab and in the history. The most common ones
 | --- | --- |
 | Paused: you pressed a button | Click **CONTINUE**. |
 | I don't know where this Center's nurse is | Heal there once by hand. |
-| Path blocked | The bot already tried again three times. If it keeps happening at the same place, record a healing path from the route to the nurse; `log/blocked` in the mod's data says what failed. |
+| Path blocked | There is no way from where the bot stands (someone who stayed in the way for 4 seconds, or a place it cannot cross). If it keeps happening at the same place, record a healing path; `log/blocked` in the mod's data says what failed. |
 | No Pokémon Center found nearby | Record a healing path from the route to the nurse. |
 | A Repel is active | Wait for it to wear off. |
 | Party and PC are full | Make room in the PC. |

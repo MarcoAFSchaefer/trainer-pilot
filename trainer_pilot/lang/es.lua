@@ -137,4 +137,5 @@ return {
   edit = "editar", new_target = "+ Nuevo objetivo", start_hunt = "EMPEZAR CAZA",
   catch_state = "Captura automática: %s  (configurar >)", on_caps = "ACTIVADA", off_low = "desactivada", reset_btn = "Caza por reinicio >",
   more_targets = "+%d más",
+  routes_all = "Todas", routes_near = "Cercanas", no_routes_near = "Ninguna ruta en este mapa ni en los vecinos",
 }
