@@ -1,0 +1,16 @@
+{
+  "id": "trainer_pilot",
+  "name": "Trainer Pilot",
+  "version": "0.25.0",
+  "api": 3,
+  "entry": "main.lua",
+  "category": "GAMEPLAY",
+  "profile": "content",
+  "games": ["firered", "leafgreen"],
+  "affects_link": false,
+  "dependencies": [],
+  "optional_dependencies": ["trainer_desk"],
+  "conflicts": [],
+  "permissions": ["engine_internals"],
+  "description": "A training bot for FireRed and LeafGreen that plays with the game's own buttons: walks a route you record (grass, fishing spot or VS Seeker), fights, goes back to the Pokemon Center along a recorded path, and stops on the conditions you choose (target level, shiny, chosen species, low HP, move learning, evolution). Its control panel lives in the Trainer Desk window."
+}
