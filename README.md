@@ -24,6 +24,12 @@ Copy the `trainer_pilot` folder into the game's mods folder:
 
 The control panel appears in the Trainer Desk docks, so Trainer Desk is needed to use it.
 
+## Options
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| Language | English | Language of the control panel: ENGLISH, ESPANOL, PORTUGUES or JAPANESE. |
+
 ## Panel
 
 | Tab | What is there |
@@ -34,17 +40,24 @@ The control panel appears in the Trainer Desk docks, so Trainer Desk is needed t
 | Training | Stop conditions, healing (Center, HP threshold, potions and ethers), and START TRAINING. |
 | Hunt | Targets and their editor, automatic catching, the Safari Zone, reset hunting, and START HUNT. |
 
-The panel text is in Portuguese.
+The panel follows the Language option (see below).
 
 ## Reset hunting
 
 Stand in front of the Pokémon (or the person who gives it), with room in the party, and start a reset hunt. The bot saves the game there, presses A, looks at what came, and loads the save again until it matches a target or is shiny. While the hunt exists, nothing else may write the save, so a bad attempt is never kept; the lock is released when the target is found or caught, when you press FINISH, or when you walk away from the spot.
+
+## Languages
+
+The control panel is in English, Spanish, Portuguese and Japanese: choose one with the **Language** option in the mod's settings. Names that come from the game itself (Pokémon, moves, items, places) stay in the language of your game.
+
+Each language is a file in `trainer_pilot/lang/` (`en.lua`, `es.lua`, `pt.lua`, `ja.lua`); English is the reference, and a text missing from another language shows in English. Japanese text is drawn with a cut-down copy of Noto Sans JP in `trainer_pilot/fonts/` (SIL Open Font License, `fonts/OFL.txt`). See [docs/TRANSLATING.md](docs/TRANSLATING.md) to fix or add a translation.
 
 ## Documentation
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the bot is organised, its main loop and hooks.
 - [docs/DATA.md](docs/DATA.md): settings, saved data formats and stop reasons.
 - [docs/ENGINE_NOTES.md](docs/ENGINE_NOTES.md): the game functions the bot relies on and the pitfalls found on the way.
+- [docs/TRANSLATING.md](docs/TRANSLATING.md): how the translations work and how to change them.
 - [CHANGELOG.md](CHANGELOG.md): version history.
 - [tests/README.md](tests/README.md): running the automated checks.
 

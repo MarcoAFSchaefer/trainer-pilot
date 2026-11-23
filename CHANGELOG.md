@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.26.0
+
+- Control panel in English, Spanish, Portuguese and Japanese (new Language option; English by default), including stop reasons, natures, Hidden Power types and route names.
+- Japanese text drawn with a bundled Noto Sans JP subset.
+
 ## 0.25.0
 
 - Renamed from PokeBot to Trainer Pilot; mod id `poke_bot` becomes `trainer_pilot`.

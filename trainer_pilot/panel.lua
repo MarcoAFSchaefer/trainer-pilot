@@ -1,8 +1,14 @@
 -- Trainer Pilot's control panel: five tabs drawn into a Trainer Desk panel. Everything
 -- clickable is registered as a rectangle while drawing and looked up when the
 -- pointer goes down.
-return function(mod, Bot)
+return function(mod, Bot, I18n)
   local G = love.graphics
+  -- main.lua passes its texts; loaded on its own, the panel makes its own
+  I18n = I18n or assert(load(assert(mod:read("i18n.lua")), "@trainer_pilot/i18n.lua"))()(mod, function()
+    local ok, value = pcall(function() return mod.options:get("language") end)
+    return ok and value or "en"
+  end)
+  local T, F = I18n.T, I18n.F
   local floor, max, min = math.floor, math.max, math.min
   local Panel = { W = 480, H = 432 }
   local tab, routePage, speciesPage, picked = "control", 1, 1, nil
@@ -10,7 +16,7 @@ return function(mod, Bot)
   local fonts = {}
   local function font(size)
     size = max(8, floor(size + 0.5))
-    if not fonts[size] then fonts[size] = G.newFont(size) end
+    if not fonts[size] then fonts[size] = I18n.font(size) end
     return fonts[size]
   end
   -- The panel is laid out on a 480x432 sheet and stretched to the room it is
@@ -34,39 +40,11 @@ return function(mod, Bot)
     C.text, C.muted = colors.textActive or C.text, colors.text or C.muted
     C.accent, C.on = colors.accent or C.accent, colors.accent or C.on
   end
-  local REASONS = {
-    player = "Pausado: você apertou um botão", shiny = "SHINY apareceu!", species = "Apareceu um Pokémon da sua lista",
-    learn = "Quer aprender um golpe novo", evolve = "Está evoluindo", level = "Nível alvo atingido",
-    hunt_found = "ALVO ENCONTRADO! Agora é com você",
-    ev_done = "Alvo de EV atingido", ev_healed = "Alvo de EV atingido: equipe curada, parado no Centro Pokémon",
-    pc_full = "Equipe e PC cheios: um Pokémon capturado não teria para onde ir",
-    repel_on = "Há um Repel ativo: nesta rota ele espanta os Pokémon. Espere acabar para iniciar",
-    reset_released = "Você saiu do ponto da caça por reset: caça encerrada e salvamento liberado",
-    reset_nothing = "Apertei A e nada apareceu: salve de frente para o Pokémon (e com vaga na equipe)",
-    reset_trainer = "Começou uma batalha de treinador: a caça por reset é para selvagens e presentes",
-    reset_load = "Não consegui recarregar o save", no_save = "Não dá para salvar aqui agora",
-    safari_over = "O Safari acabou (passos ou Safari Balls)",
-    safari_reenter = "Não consegui entrar de novo no Safari",
-    safari_money = "O Safari acabou e o dinheiro não dá para outra entrada",
-    caught = "Alvo capturado!", no_balls_ready = "Sem bolas na mochila: a caça com captura não continua", no_balls = "ALVO NA TELA e acabaram as bolas: a batalha é com você",
-    level_healed = "Nível alvo atingido: equipe curada, parado no Centro Pokémon",
-    needs_heal = "Equipe precisa de cura (sem rota de cura)", heal_far = "A rota de cura não passa por este mapa",
-    heal_failed = "Não consegui curar no Centro", fainted = "Sem Pokémon para continuar a batalha",
-    no_pp = "Sem PP para atacar", blocked = "Caminho bloqueado", stuck = "Fiquei preso", question = "O jogo fez uma pergunta",
-    no_route = "Escolha uma rota na aba Rotas", no_targets = "Crie pelo menos um alvo na aba Caça", other_map = "A rota de treino é de outro mapa", no_game = "Entre no jogo primeiro",
-    no_center = "Não achei Centro Pokémon por perto",
-    nurse = "Não sei onde fica a enfermeira deste Centro: cure uma vez à mão que eu aprendo",
-    no_trainers = "Nenhum treinador ao alcance do VS Seeker neste ponto",
-    no_scent = "Acabou o PP do Sweet Scent e não há como recuperar aqui",
-    no_scent_move = "Ninguém na equipe sabe Sweet Scent", no_scent_here = "Sweet Scent não funciona neste ponto",
-    no_rod = "Sem a vara de pescar escolhida na mochila", cant_fish = "Não dá para pescar aqui", no_seeker = "Sem VS Seeker na mochila",
-    nobody = "Nenhum Pokémon escolhido para lutar", party_menu = "Não consegui trocar de Pokémon",
-    battle_menu = "Não consegui usar o menu de batalha", error = "Erro interno (veja o log)", quit = "",
-  }
+  -- Texts by key come from lang/<language>.lua (see i18n.lua).
+  local REASONS = setmetatable({}, { __index = function(_, code) return T("reasons")[code] end })
   Bot.reasonText = function(code) return REASONS[code] or tostring(code) end
-  local STATUS = { reset = "Caça por reset", idle = "Parado", train = "Treinando", battle = "Em batalha", seeker = "Indo até o treinador",
-    charging = "Carregando o VS Seeker", scent = "Usando Sweet Scent", to_heal = "Indo ao Centro Pokémon", healing = "Curando", from_heal = "Voltando do Centro" }
-  local KIND = { grass = "Grama", fish = "Pesca", seeker = "VS Seeker", heal = "Cura", scent = "Sweet Scent" }
+  local STATUS = setmetatable({}, { __index = function(_, key) return T("status")[key] end })
+  local KIND = setmetatable({}, { __index = function(_, key) return T("kinds")[key] end })
   local KIND_COLOR = { grass = hex("3fa35a"), fish = hex("3a86d8"), seeker = hex("9a6ae0"), heal = hex("d9534f"), scent = hex("d86aa8") }
 
   local function color(c, a) G.setColor(c[1], c[2], c[3], a or 1) end
@@ -208,7 +186,7 @@ return function(mod, Bot)
 
   ---------------------------------------------------------------------------
   local speciesName
-  local EV_NAMES = { hp = "HP", atk = "Ataque", def = "Defesa", spe = "Veloc.", spa = "Atq. Esp", spd = "Def. Esp" }
+  local EV_NAMES = setmetatable({}, { __index = function(_, key) return T("ev")[key] end })
   local function monName(mon)
     local h = Bot.host()
     local ok, name = pcall(function()
@@ -226,7 +204,7 @@ return function(mod, Bot)
   end
   local fightIcon
   local controlView, historyPage = nil, 1
-  local MODE_NAMES = { train = "Treino", hunt = "Caça", reset = "Reset" }
+  local MODE_NAMES = setmetatable({}, { __index = function(_, key) return T("modes")[key] end })
   local function placeName(map)
     map = tostring(map or ""):gsub("^%u%u_", ""):gsub("_", " ")
     return nameCase(map)
@@ -234,14 +212,14 @@ return function(mod, Bot)
   local function drawHistory()
     local list = Bot.history or {}
     box(10, 44, 460, 34, C.card, 8)
-    text("Histórico de paradas", 22, 51, C.text, 14)
-    line(#list .. (#list == 1 and " parada guardada" or " paradas guardadas"), 200, 54, C.muted, 10, 150)
-    if #list > 0 then button("Limpar", 384, 50, 78, 22, C.off, function() Bot.clearHistory() historyPage = 1 end, 11, 8) end
+    text(T("history_title"), 22, 51, C.text, 14)
+    line(#list == 1 and T("history_one") or F("history_many", #list), 200, 54, C.muted, 10, 150)
+    if #list > 0 then button(T("clear"), 384, 50, 78, 22, C.off, function() Bot.clearHistory() historyPage = 1 end, 11, 8) end
     local perPage = 8
     local pages = max(1, math.ceil(#list / perPage))
     historyPage = max(1, min(pages, historyPage))
     if #list == 0 then
-      centred("Nada ainda: cada vez que o bot parar, fica anotado aqui.", 10, 120, 460, 20, C.muted, 12)
+      centred(T("history_empty"), 10, 120, 460, 20, C.muted, 12)
     end
     for row = 1, perPage do
       local e = list[(historyPage - 1) * perPage + row]
@@ -256,14 +234,14 @@ return function(mod, Bot)
         local seconds = e.seconds or 0
         local length = seconds >= 3600 and ("%dh%02d"):format(floor(seconds / 3600), floor(seconds / 60) % 60)
           or ("%d:%02d"):format(floor(seconds / 60), seconds % 60)
-        local parts = { MODE_NAMES[e.mode] or "?", length, e.battles .. " batalhas" }
+        local parts = { MODE_NAMES[e.mode] or "?", length, F("battles_n", e.battles) }
         if e.route ~= "" then table.insert(parts, 2, e.route) end
-        if (e.found or 0) > 0 then parts[#parts + 1] = e.found .. " alvo(s)" end
+        if (e.found or 0) > 0 then parts[#parts + 1] = F("targets_n", e.found) end
         if e.map ~= "" then parts[#parts + 1] = placeName(e.map) .. (e.x and (" (" .. e.x .. "," .. e.y .. ")") or "") end
         line(table.concat(parts, "  ·  "), 24, y + 18, C.muted, 10, 434)
       end
     end
-    button("< Voltar", 10, 380, 226, 30, C.off, function() controlView = nil end, 13)
+    button(T("back"), 10, 380, 226, 30, C.off, function() controlView = nil end, 13)
     pager(470, 382, 26, historyPage, pages, function(page) historyPage = page end)
   end
   local function drawControl()
@@ -277,17 +255,17 @@ return function(mod, Bot)
     color(running and C.go or C.line)
     G.circle("fill", ox + 28 * kx, oy + 64 * ky, 6 * kf)
     text(STATUS[Bot.status] or Bot.status, 42, 50, C.text, 18)
-    local label = mode == "reset" and "Caça por reset" or mode == "hunt" and "Caça" or mode == "train" and "Treino" or nil
+    local label = mode == "reset" and T("reset_title") or mode and MODE_NAMES[mode] or nil
     local px = 22
     if label then px = px + pill(label, px, 82, C.accent) + 6 end
     if mode ~= "reset" then
-      line(train and train.name or "nenhuma rota: grave uma na aba Rotas", px, 84, C.muted, 11, 326 - px)
+      line(train and train.name or T("no_route_hint"), px, 84, C.muted, 11, 326 - px)
     end
     if running then
-      button("PARAR", 340, 52, 118, 48, C.stop, function() Bot.stop("player") Bot.reason = nil end, 15, 8)
+      button(T("stop_btn"), 340, 52, 118, 48, C.stop, function() Bot.stop("player") Bot.reason = nil end, 15, 8)
     elseif mode and Bot.stats.startedAt then
-      button("CONTINUAR", 340, 50, 118, 28, C.go, function() Bot.start(Bot.mode, true) end, 13, 8)
-      button("FINALIZAR", 340, 82, 118, 22, C.off, function() Bot.finish() end, 11, 8)
+      button(T("continue_btn"), 340, 50, 118, 28, C.go, function() Bot.start(Bot.mode, true) end, 13, 8)
+      button(T("finish_btn"), 340, 82, 118, 22, C.off, function() Bot.finish() end, 11, 8)
     end
     -- why it stopped: gold when that is good news, red when it is not
     local reason = not running and Bot.reason and REASONS[Bot.reason] ~= "" and (REASONS[Bot.reason] or Bot.reason) or nil
@@ -304,16 +282,16 @@ return function(mod, Bot)
     local clock = elapsed >= 3600 and ("%d:%02d:%02d"):format(floor(elapsed / 3600), floor(elapsed / 60) % 60, elapsed % 60)
       or ("%02d:%02d"):format(floor(elapsed / 60), elapsed % 60)
     local used = (stats.itemsHp or 0) + (stats.itemsPp or 0)
-    tile("Batalhas", stats.battles or 0, 10, 140, 110)
-    tile("Curas", stats.heals or 0, 126, 140, 110)
-    tile("Itens usados", used, 242, 140, 110)
-    tile("Tempo", clock, 358, 140, 112)
+    tile(T("t_battles"), stats.battles or 0, 10, 140, 110)
+    tile(T("t_heals"), stats.heals or 0, 126, 140, 110)
+    tile(T("t_items"), used, 242, 140, 110)
+    tile(T("t_time"), clock, 358, 140, 112)
     if mode == "reset" or mode == "hunt" then
       local reset = mode == "reset"
-      tile(reset and "Tentativas" or "Alvos na rodada", reset and (stats.resets or 0) or #c.targets, 10, 190, 110)
-      tile("Alvos achados", stats.found or 0, 126, 190, 110, (stats.found or 0) > 0 and C.warn or nil)
-      tile("Capturados", stats.caught or 0, 242, 190, 110, (stats.caught or 0) > 0 and C.go or nil)
-      tile("Falhas", stats.lost or 0, 358, 190, 112, (stats.lost or 0) > 0 and C.stop or nil)
+      tile(reset and T("t_attempts") or T("t_targets"), reset and (stats.resets or 0) or #c.targets, 10, 190, 110)
+      tile(T("t_found"), stats.found or 0, 126, 190, 110, (stats.found or 0) > 0 and C.warn or nil)
+      tile(T("t_caught"), stats.caught or 0, 242, 190, 110, (stats.caught or 0) > 0 and C.go or nil)
+      tile(T("t_lost"), stats.lost or 0, 358, 190, 112, (stats.lost or 0) > 0 and C.stop or nil)
     elseif evLead() then
       -- EV training: how far the one fighting is from each of its targets
       local mon = evLead()
@@ -333,38 +311,38 @@ return function(mod, Bot)
       end
       if shown <= 3 then
         local fled = stats.evFled or 0
-        line("EV de " .. monName(mon) .. (fled > 0 and ("   ·   fugiu de " .. fled .. " que dariam EV errado") or ""), 22, 216, C.muted, 10, 436)
+        line(F("ev_of", monName(mon)) .. (fled > 0 and F("ev_fled", fled) or ""), 22, 216, C.muted, 10, 436)
       end
     else
       -- training: what it is set to stop for, as labels
       box(10, 190, 460, 46, C.card, 8)
-      text("Para quando", 22, 194, C.muted, 10)
+      text(T("stops_when"), 22, 194, C.muted, 10)
       local x = 22
       local function stop(label2) x = x + pill(label2, x, 212, C.off, C.text, 10) + 5 end
-      if c.stopLevel > 0 then stop("nível " .. c.stopLevel) end
-      if c.stopShiny then stop("shiny") end
-      if next(c.species) then stop("espécie da lista") end
-      if c.stopLearn then stop("golpe novo") end
-      if c.stopEvolve then stop("evolução") end
-      if c.stopNoPP then stop("sem PP") end
-      if not c.healOn then stop("precisar de cura") end
-      if x == 22 then text("nada: roda até você parar", 22, 213, C.muted, 11) end
+      if c.stopLevel > 0 then stop(F("s_level", c.stopLevel)) end
+      if c.stopShiny then stop(T("s_shiny")) end
+      if next(c.species) then stop(T("s_species")) end
+      if c.stopLearn then stop(T("s_learn")) end
+      if c.stopEvolve then stop(T("s_evolve")) end
+      if c.stopNoPP then stop(T("s_pp")) end
+      if not c.healOn then stop(T("s_heal")) end
+      if x == 22 then text(T("s_nothing"), 22, 213, C.muted, 11) end
     end
     -- where, and how it heals
     box(10, 240, 460, 50, C.card, 8)
     if mode == "reset" then
-      text("Sem rota: recarrega o save e tenta de novo", 22, 246, C.text, 13, 436)
-      text(Bot.resetLock and "Salvamento bloqueado até achar o alvo ou FINALIZAR" or "Salvamento liberado", 22, 268, C.muted, 11, 436)
+      text(T("reset_line"), 22, 246, C.text, 13, 436)
+      text(Bot.resetLock and T("save_locked") or T("save_free"), 22, 268, C.muted, 11, 436)
     else
       local nx = 22
       if train then nx = nx + pill(KIND[train.kind], nx, 246, C.off, C.text, 10) + 6 end
-      line(train and train.name or "Nenhuma rota escolhida", nx, 247, C.text, 13, 350 - nx)
+      line(train and train.name or T("no_route_chosen"), nx, 247, C.text, 13, 350 - nx)
       local fighters = 0
       for _ in pairs(c.selected) do fighters = fighters + 1 end
-      local cure = not c.healOn and "sem cura" or heal and ("cura pelo caminho " .. heal.name) or "cura no Centro mais próximo"
-      line(fighters .. " lutando   ·   HP mínimo " .. c.hpPct .. "%   ·   " .. cure, 22, 270, C.muted, 11, 436)
+      local cure = not c.healOn and T("cure_none") or heal and F("cure_path", heal.name) or T("cure_center")
+      line(F("fighting_line", fighters, c.hpPct, cure), 22, 270, C.muted, 11, 436)
       if train and train.kind == "fish" then
-        local rods = { [0] = "Vara: melhor", [262] = "Vara: Old", [263] = "Vara: Good", [264] = "Vara: Super" }
+        local rods = T("rods")
         button(rods[c.rod] or rods[0], 360, 244, 100, 20, C.off, function()
           c.rod = (c.rod == 0 and 262) or (c.rod == 262 and 263) or (c.rod == 263 and 264) or 0
           save()
@@ -374,13 +352,13 @@ return function(mod, Bot)
     local LEVELS = { 0, 1, 2, 3, 4, 10, 20, 30, 50, 75, 100, 200 }
     local at = 1
     for index, level in ipairs(LEVELS) do if level == c.speed then at = index end end
-    stepper("Velocidade enquanto roda", 10, 294, 460, c.speed == 0 and "do jogo" or (c.speed .. "x"),
+    stepper(T("speed"), 10, 294, 460, c.speed == 0 and T("game_speed") or (c.speed .. "x"),
       function() Bot.setSpeed(LEVELS[max(1, at - 1)]) end, function() Bot.setSpeed(LEVELS[min(#LEVELS, at + 1)]) end)
     -- what has appeared so far, most often first
     local rec = Bot.recording
     if rec then
       box(10, 326, 460, 40, mix(C.card, C.stop, 0.6), 8)
-      text("Gravando " .. KIND[rec.kind] .. ": " .. #rec.points .. " passos", 22, 338, C.text, 13)
+      text(F("recording_n", KIND[rec.kind], #rec.points), 22, 338, C.text, 13)
     else
       local seen = {}
       for species, count in pairs(stats.seen or {}) do seen[#seen + 1] = { id = species, count = count } end
@@ -394,9 +372,9 @@ return function(mod, Bot)
         end
       end
     end
-    button("Histórico de paradas (" .. #(Bot.history or {}) .. ")", 10, 372, 200, 22, C.off, function() controlView = "history" end, 11, 8)
-    text("Inicie pela aba Treino ou Caça. Qualquer botão ou tecla pausa o bot.", 12, 400, C.muted, 11, 456)
-    text("CONTINUAR retoma de onde parou; FINALIZAR encerra e zera os números.", 12, 414, C.muted, 11, 456)
+    button(F("history_btn", #(Bot.history or {})), 10, 372, 200, 22, C.off, function() controlView = "history" end, 11, 8)
+    text(T("control_hint1"), 12, 400, C.muted, 11, 456)
+    text(T("control_hint2"), 12, 414, C.muted, 11, 456)
   end
 
   local ROUTES_PER_PAGE = 4
@@ -404,21 +382,21 @@ return function(mod, Bot)
     local c, rec = Bot.config, Bot.recording
     if rec then
       box(10, 44, 460, 96, C.card)
-      text("Gravando " .. KIND[rec.kind], 22, 52, C.warn, 16)
-      text(#rec.points .. " passos. Ande pelo trajeto e depois salve.", 22, 76, C.text, 13)
-      button("SALVAR", 22, 100, 150, 30, C.go, function() Bot.stopRecording(true) end)
-      button("CANCELAR", 182, 100, 150, 30, C.off, function() Bot.stopRecording(false) end)
+      text(F("recording", KIND[rec.kind]), 22, 52, C.warn, 16)
+      text(F("recording_steps", #rec.points), 22, 76, C.text, 13)
+      button(T("save_btn"), 22, 100, 150, 30, C.go, function() Bot.stopRecording(true) end)
+      button(T("cancel"), 182, 100, 150, 30, C.off, function() Bot.stopRecording(false) end)
     else
       box(10, 44, 460, 130, C.card, 8)
-      text("NOVA ROTA", 22, 50, C.muted, 10)
-      text("Gravar andando (comece parado no início)", 22, 66, C.text, 12)
-      button("Grama", 22, 84, 140, 26, C.off, function() Bot.startRecording("grass") end, 12)
-      button("VS Seeker", 168, 84, 140, 26, C.off, function() Bot.startRecording("seeker") end, 12)
-      button("Caminho de cura", 314, 84, 144, 26, C.off, function() Bot.startRecording("heal") end, 12)
-      text("Marcar o ponto onde você está", 22, 118, C.text, 12)
-      button("Pesca", 22, 136, 140, 26, C.off, function() Bot.markFishingSpot() end, 12)
-      button("Sweet Scent", 168, 136, 140, 26, C.off, function() Bot.markSpot("scent") end, 12)
-      button("VS Seeker", 314, 136, 144, 26, C.off, function() Bot.markSpot("seeker") end, 12)
+      text(T("new_route"), 22, 50, C.muted, 10)
+      text(T("record_walk"), 22, 66, C.text, 12)
+      button(KIND.grass, 22, 84, 140, 26, C.off, function() Bot.startRecording("grass") end, 12)
+      button(KIND.seeker, 168, 84, 140, 26, C.off, function() Bot.startRecording("seeker") end, 12)
+      button(T("heal_path"), 314, 84, 144, 26, C.off, function() Bot.startRecording("heal") end, 12)
+      text(T("mark_here"), 22, 118, C.text, 12)
+      button(KIND.fish, 22, 136, 140, 26, C.off, function() Bot.markFishingSpot() end, 12)
+      button(KIND.scent, 168, 136, 140, 26, C.off, function() Bot.markSpot("scent") end, 12)
+      button(KIND.seeker, 314, 136, 144, 26, C.off, function() Bot.markSpot("seeker") end, 12)
     end
     local pages = max(1, math.ceil(#Bot.routes / ROUTES_PER_PAGE))
     routePage = max(1, min(pages, routePage))
@@ -431,24 +409,24 @@ return function(mod, Bot)
         if chosen then box(10, y + 6, 3, 24, C.accent, 2) end
         local nx = 20 + pill(KIND[route.kind], 20, y + 9, mix(C.card, KIND_COLOR[route.kind] or C.muted, 0.55), C.text, 10) + 8
         line(route.name, nx, y + 3, C.text, 13, 330 - nx)
-        text(#route.points .. (#route.points == 1 and " ponto" or " pontos"), nx, y + 20, C.muted, 10)
+        text(#route.points == 1 and T("point_one") or F("point_many", #route.points), nx, y + 20, C.muted, 10)
         local tx = 462
-        if c.heal == route.name then tx = tx - 44; pill("cura", tx, y + 9, C.go, C.text, 10); tx = tx - 6 end
-        if c.train == route.name then tx = tx - 52; pill("em uso", tx, y + 9, C.accent, C.text, 10) end
+        if c.heal == route.name then tx = tx - 44; pill(T("pill_heal"), tx, y + 9, C.go, C.text, 10); tx = tx - 6 end
+        if c.train == route.name then tx = tx - 52; pill(T("in_use"), tx, y + 9, C.accent, C.text, 10) end
         hit(10, y, 460, 36, function() picked = route.name end)
       end
     end
     local chosen = picked and Bot.route(picked)
     if chosen then
       if chosen.kind == "heal" then
-        button("Usar como caminho de cura", 10, 352, 220, 30, C.accent, function() c.heal = chosen.name save() end, 12)
+        button(T("use_heal"), 10, 352, 220, 30, C.accent, function() c.heal = chosen.name save() end, 12)
       else
-        button("Usar esta rota", 10, 352, 220, 30, C.accent, function() c.train = chosen.name save() end)
+        button(T("use_route"), 10, 352, 220, 30, C.accent, function() c.train = chosen.name save() end)
       end
-      button("Apagar", 240, 352, 110, 30, C.stop, function() Bot.deleteRoute(chosen.name) picked = nil end)
+      button(T("delete"), 240, 352, 110, 30, C.stop, function() Bot.deleteRoute(chosen.name) picked = nil end)
     end
     if c.heal then
-      button("Voltar para cura automática", 10, 388, 220, 28, C.off, function() c.heal = nil save() end, 12)
+      button(T("auto_heal"), 10, 388, 220, 28, C.off, function() c.heal = nil save() end, 12)
     end
     pager(470, 352, 30, routePage, pages, function(page) routePage = page end)
   end
@@ -484,35 +462,35 @@ return function(mod, Bot)
   end
   local function drawStops()
     local c = Bot.config
-    text("PARAR QUANDO", 12, 42, C.muted, 10)
-    stepper("Chegar ao nível", 10, 56, 460, c.stopLevel > 0 and c.stopLevel or "não",
+    text(T("stop_when"), 12, 42, C.muted, 10)
+    stepper(T("reach_level"), 10, 56, 460, c.stopLevel > 0 and c.stopLevel or T("no"),
       function() c.stopLevel = max(0, c.stopLevel - (c.stopLevel > 10 and 5 or 1)) save() end,
       function() c.stopLevel = min(100, c.stopLevel + (c.stopLevel >= 10 and 5 or 1)) save() end)
-    toggle("Aparecer um shiny", 10, 84, 228, c.stopShiny, function() c.stopShiny = not c.stopShiny save() end)
-    toggle("For evoluir", 242, 84, 228, c.stopEvolve, function() c.stopEvolve = not c.stopEvolve save() end)
-    toggle("Quiser aprender golpe (desligado: não aprende)", 10, 112, 460, c.stopLearn, function() c.stopLearn = not c.stopLearn save() end)
-    toggle("Acabar o PP em batalha (desligado: troca e cura)", 10, 140, 460, c.stopNoPP, function() c.stopNoPP = not c.stopNoPP save() end)
-    text("CURA", 12, 172, C.muted, 10)
-    stepper("HP mínimo para lutar", 10, 186, 460, c.hpPct .. "%",
+    toggle(T("shiny_appears"), 10, 84, 228, c.stopShiny, function() c.stopShiny = not c.stopShiny save() end)
+    toggle(T("evolves"), 242, 84, 228, c.stopEvolve, function() c.stopEvolve = not c.stopEvolve save() end)
+    toggle(T("learn_move"), 10, 112, 460, c.stopLearn, function() c.stopLearn = not c.stopLearn save() end)
+    toggle(T("pp_out"), 10, 140, 460, c.stopNoPP, function() c.stopNoPP = not c.stopNoPP save() end)
+    text(T("heal_head"), 12, 172, C.muted, 10)
+    stepper(T("min_hp"), 10, 186, 460, c.hpPct .. "%",
       function() c.hpPct = max(0, c.hpPct - 5) save() end, function() c.hpPct = min(90, c.hpPct + 5) save() end)
-    toggle("Ir ao Centro Pokémon (desligado: para o bot)", 10, 214, 460, c.healOn, function() c.healOn = not c.healOn save() end)
+    toggle(T("go_center"), 10, 214, 460, c.healOn, function() c.healOn = not c.healOn save() end)
     local LIMITS = { 0, 1, 2, 3, 5, 10, 20, 50, -1 }
     local function limit(label, x, key)
       local at = 1
       for index, value in ipairs(LIMITS) do if value == c[key] then at = index end end
-      stepper(label, x, 242, 228, c[key] == -1 and "s/ limite" or (c[key] == 0 and "não" or c[key]),
+      stepper(label, x, 242, 228, c[key] == -1 and T("no_limit") or (c[key] == 0 and T("no") or c[key]),
         function() c[key] = LIMITS[max(1, at - 1)] save() end, function() c[key] = LIMITS[min(#LIMITS, at + 1)] save() end)
     end
-    limit("Usar poções", 10, "itemHp")
-    limit("Usar éteres", 242, "itemPp")
-    text("NO CAMINHO", 12, 274, C.muted, 10)
-    toggle("Fugir de selvagens fora da rota (desligado: luta)", 10, 288, 460, c.travelRun, function() c.travelRun = not c.travelRun save() end)
-    text("PARAR SE APARECER (Pokémon deste mapa)", 12, 320, C.muted, 10)
+    limit(T("use_potions"), 10, "itemHp")
+    limit(T("use_ethers"), 242, "itemPp")
+    text(T("on_the_way"), 12, 274, C.muted, 10)
+    toggle(T("flee_travel"), 10, 288, 460, c.travelRun, function() c.travelRun = not c.travelRun save() end)
+    text(T("stop_if"), 12, 320, C.muted, 10)
     local list = areaSpecies()
     local per = 6
     local pages = max(1, math.ceil(#list / per))
     speciesPage = max(1, min(pages, speciesPage))
-    if #list == 0 then text("Nenhum Pokémon selvagem neste mapa.", 12, 338, C.muted, 12) end
+    if #list == 0 then text(T("no_wild_map"), 12, 338, C.muted, 12) end
     for index = 1, per do
       local entry = list[(speciesPage - 1) * per + index]
       if entry then
@@ -525,7 +503,7 @@ return function(mod, Bot)
         speciesIcon(entry.id, x + 2, y, 24)
       end
     end
-    button("INICIAR TREINO", 10, 398, 350, 28, C.go, function()
+    button(T("start_training"), 10, 398, 350, 28, C.go, function()
       -- started or not, the Control tab says what happened
       Bot.start("train")
       tab = "control"
@@ -565,11 +543,11 @@ return function(mod, Bot)
     box(10, 44, 460, 58, C.card, 8)
     local okPic, pic = pcall(h.Pokemon.monIcon, mon)
     if okPic then sprite(pic, 16, 50, 46) end
-    line("Treino de EV de " .. monName(mon), 70, 50, C.text, 15, 390)
+    line(F("ev_title", monName(mon)), 70, 50, C.text, 15, 390)
     local total, wanted = 0, 0
     for _, key in ipairs(Bot.EV_KEYS) do total, wanted = total + (tonumber(evs[key]) or 0), wanted + (t[key] or 0) end
-    line("Tem " .. total .. " de 510   ·   alvos somam " .. wanted, 70, 74, wanted > 510 and C.warn or C.muted, 11, 390)
-    text("ATRIBUTO · EV QUE TEM AGORA            ALVO (toque no número: 0 ou 252)", 12, 108, C.muted, 10)
+    line(F("ev_total", total, wanted), 70, 74, wanted > 510 and C.warn or C.muted, 11, 390)
+    text(T("ev_head"), 12, 108, C.muted, 10)
     for index, key in ipairs(Bot.EV_KEYS) do
       local x, y = 10 + ((index - 1) % 2) * 232, 122 + floor((index - 1) / 2) * 30
       local value = t[key] or 0
@@ -578,14 +556,14 @@ return function(mod, Bot)
         c.evTargets[who][key] = max(0, min(252, n))
         save()
       end
-      stepper(EV_NAMES[key] .. " · " .. (tonumber(evs[key]) or 0), x, y, 228, value > 0 and value or "não",
+      stepper(EV_NAMES[key] .. " · " .. (tonumber(evs[key]) or 0), x, y, 228, value > 0 and value or T("no"),
         function() set(value - 4) end, function() set(value + 4) end)
       hit(x + 228 - 84, y, 54, 26, function() set(value >= 252 and 0 or 252) end)
     end
     -- what this map gives, and what the bot will do about it
-    text("NESTE MAPA", 12, 218, C.muted, 10)
+    text(T("on_this_map"), 12, 218, C.muted, 10)
     local list = areaSpecies()
-    if #list == 0 then text("Nenhum Pokémon selvagem aqui.", 12, 234, C.muted, 11) end
+    if #list == 0 then text(T("no_wild_here"), 12, 234, C.muted, 11) end
     for index = 1, min(8, #list) do
       local entry = list[index]
       local x, y = 10 + ((index - 1) % 2) * 232, 232 + floor((index - 1) / 2) * 28
@@ -599,17 +577,17 @@ return function(mod, Bot)
       box(x, y, 228, 24, C.card, 6)
       speciesIcon(entry.id, x + 2, y, 24)
       line(nameCase(entry.name), x + 30, y + 5, C.text, 11, 86)
-      line(#parts > 0 and table.concat(parts, " ") or "sem EV", x + 118, y + 6, flee and C.stop or C.go, 10, 104, "right")
+      line(#parts > 0 and table.concat(parts, " ") or T("no_ev"), x + 118, y + 6, flee and C.stop or C.go, 10, 104, "right")
     end
-    line("Verde: o bot luta.   Vermelho: daria EV que este Pokémon não quer, o bot foge.", 12, 348, C.muted, 10, 456)
-    button("< Voltar", 10, 372, 226, 32, C.off, function() evSlot = nil end)
-    button("Limpar alvos", 244, 372, 226, 32, C.off, function() c.evTargets[who] = nil save() end)
-    line("Vale em grama, pesca e Sweet Scent; em rota de VS Seeker fica desligado.", 12, 412, C.muted, 10, 456)
+    line(T("ev_legend"), 12, 348, C.muted, 10, 456)
+    button(T("back"), 10, 372, 226, 32, C.off, function() evSlot = nil end)
+    button(T("clear_targets"), 244, 372, 226, 32, C.off, function() c.evTargets[who] = nil save() end)
+    line(T("ev_where"), 12, 412, C.muted, 10, 456)
   end
   local function drawTeam()
     if evSlot then return drawEv() end
     local c = Bot.config
-    line("Marque quem luta. Toque num golpe para proibir; em EV para definir os alvos.", 12, 43, C.muted, 11, 456)
+    line(T("team_hint"), 12, 43, C.muted, 11, 456)
     local session, h = Bot.session(), Bot.host()
     local party = session and session.party or {}
     for slot = 1, 6 do
@@ -629,7 +607,7 @@ return function(mod, Bot)
         local okPic, pic = pcall(h.Pokemon.monIcon, mon)
         if okPic then sprite(pic, 18, y + 5, 44, fainted or not on) end
         local ok, name = pcall(function()
-          if egg then return "Ovo" end
+          if egg then return T("egg") end
           return (mon.nickname and mon.nickname ~= "" and mon.nickname) or h.Pokemon.name(h.Pokemon.speciesOf(mon))
         end)
         line(ok and nameCase(name) or "?", 70, y + 4, on and C.text or C.muted, 14, 108)
@@ -638,7 +616,7 @@ return function(mod, Bot)
           button("EV", 182, y + 5, 30, 18, Bot.evTarget(mon) and C.accent or C.off, function() evSlot = slot end, 10, 9)
         end
         if not egg then
-          text("Nv " .. tostring(mon.level or "?"), 222, y + 6, C.muted, 12)
+          text(F("level_short", tostring(mon.level or "?")), 222, y + 6, C.muted, 12)
           -- HP as a bar: green, amber, red
           local ratio = max(0, min(1, hp / maxHp))
           box(266, y + 10, 76, 7, C.line, 4)
@@ -677,21 +655,19 @@ return function(mod, Bot)
         end
       else
         box(10, y, 460, 54, C.card, 8)
-        text("vazio", 20, y + 18, C.line, 13)
+        text(T("empty_slot"), 20, y + 18, C.line, 13)
       end
     end
-    line("Espadas verdes: luta.   Golpe na cor do tipo: pode usar.   Vermelho: proibido.", 12, 414, C.muted, 11, 456)
+    line(T("team_legend"), 12, 414, C.muted, 11, 456)
   end
 
   ---------------------------------------------------------------------------
   -- Hunting: the list of targets, and the editor for one of them
   ---------------------------------------------------------------------------
-  local STATS = { { "hp", "HP" }, { "atk", "Ataque" }, { "def", "Defesa" }, { "spa", "Atq. Esp" }, { "spd", "Def. Esp" }, { "spe", "Veloc." } }
-  local NATURES = { [0] = "Hardy", "Lonely", "Brave", "Adamant", "Naughty", "Bold", "Docile", "Relaxed", "Impish", "Lax",
-    "Timid", "Hasty", "Serious", "Jolly", "Naive", "Modest", "Mild", "Quiet", "Bashful", "Rash", "Calm", "Gentle",
-    "Sassy", "Careful", "Quirky" }
-  local HP_TYPES = { [0] = "Lutador", "Voador", "Veneno", "Terra", "Pedra", "Inseto", "Fantasma", "Aço", "Fogo", "Água",
-    "Planta", "Elétrico", "Psíquico", "Gelo", "Dragão", "Sombrio" }
+  local STATS = { { "hp" }, { "atk" }, { "def" }, { "spa" }, { "spd" }, { "spe" } }
+  for _, stat in ipairs(STATS) do setmetatable(stat, { __index = function(_, k) if k == 2 then return EV_NAMES[stat[1]] end end }) end
+  local NATURES = setmetatable({}, { __index = function(_, n) return T("natures")[n] end })
+  local HP_TYPES = setmetatable({}, { __index = function(_, n) return T("hp_types")[n] end })
   local editing, editIndex, huntPage, editPage
   local targetPage, nameEditing = 1, false
   -- Fills in what a target saved by an older version does not have.
@@ -721,15 +697,15 @@ return function(mod, Bot)
     return ok and name and nameCase(name) or ("#" .. tostring(id))
   end
   local function abilityName(id)
-    if id == 0 then return "qualquer" end
+    if id == 0 then return T("any_ability") end
     local h = Bot.host()
     local ok, name = pcall(function() return h.Pokemon.abilityName(id) end)
     return ok and name and tostring(name) or ("#" .. tostring(id))
   end
   -- bare: only the filters, without the species in front
   local function describe(t, bare)
-    local parts = { not bare and (t.species ~= 0 and speciesName(t.species) or "Qualquer") or nil }
-    if t.gender ~= "any" then parts[#parts + 1] = t.gender == "F" and "fêmea" or "macho" end
+    local parts = { not bare and (t.species ~= 0 and speciesName(t.species) or T("any")) or nil }
+    if t.gender ~= "any" then parts[#parts + 1] = t.gender == "F" and T("female") or T("male") end
     if t.ivTotal > 0 then parts[#parts + 1] = "IV>=" .. t.ivTotal end
     for _, stat in ipairs(STATS) do
       if (t.ivs[stat[1]] or 0) > 0 then parts[#parts + 1] = stat[2] .. ">=" .. t.ivs[stat[1]] end
@@ -739,12 +715,12 @@ return function(mod, Bot)
     for nature = 0, 24 do if t.natures and t.natures[nature] then natures[#natures + 1] = NATURES[nature] end end
     if #natures > 0 then parts[#parts + 1] = table.concat(natures, "/") end
     if (t.levelMin or 0) > 0 or (t.levelMax or 0) > 0 then
-      parts[#parts + 1] = "Nv " .. ((t.levelMin or 0) > 0 and t.levelMin or 1) .. "-" .. ((t.levelMax or 0) > 0 and t.levelMax or 100)
+      parts[#parts + 1] = F("level_short", ((t.levelMin or 0) > 0 and t.levelMin or 1) .. "-" .. ((t.levelMax or 0) > 0 and t.levelMax or 100))
     end
-    if (t.hpType or -1) >= 0 then parts[#parts + 1] = "HP " .. HP_TYPES[t.hpType] end
-    if (t.hpPower or 0) > 0 then parts[#parts + 1] = "HP>=" .. t.hpPower end
-    if t.item then parts[#parts + 1] = "com item" end
-    if t.shiny then parts[#parts + 1] = "SHINY" end
+    if (t.hpType or -1) >= 0 then parts[#parts + 1] = F("hp_type_short", HP_TYPES[t.hpType]) end
+    if (t.hpPower or 0) > 0 then parts[#parts + 1] = F("hp_power_short", t.hpPower) end
+    if t.item then parts[#parts + 1] = T("with_item") end
+    if t.shiny then parts[#parts + 1] = T("shiny_caps") end
     return table.concat(parts, "  ")
   end
   -- A row of choices where one is picked: blue for the picked one.
@@ -781,40 +757,40 @@ return function(mod, Bot)
       box(62, 46, 228, 24, C.off, 6)
       local blink = floor(love.timer.getTime() * 2) % 2 == 0 and "|" or ""
       line((t.name or "") .. blink, 68, 49, C.text, 15, 216)
-      line("digite o nome · Enter confirma · Esc limpa", 66, 74, C.accent, 10, 222)
+      line(T("type_name"), 66, 74, C.accent, 10, 222)
     else
-      line(named and t.name or (t.species ~= 0 and speciesName(t.species) or "Qualquer espécie"), 66, 49, C.text, 15, 222)
+      line(named and t.name or (t.species ~= 0 and speciesName(t.species) or T("any_species")), 66, 49, C.text, 15, 222)
       local filters = describe(t, not named)
-      line((filters ~= "" and filters or "sem outros filtros") .. "   ·   toque no título para dar um nome", 66, 74, C.muted, 10, 222)
+      line((filters ~= "" and filters or T("no_filters")) .. T("tap_title"), 66, 74, C.muted, 10, 222)
     end
     hit(62, 46, 228, 24, function() nameEditing = not nameEditing end)
-    choices({ { 1, "Básico" }, { 2, "Mais filtros" } }, 294, 58, 168, 26, editPage, function(page) editPage = page end, 11)
+    choices({ { 1, T("page_basic") }, { 2, T("page_more") } }, 294, 58, 168, 26, editPage, function(page) editPage = page end, 11)
   end
   local function editorFooter(t)
-    button("SALVAR ALVO", 10, 384, 226, 30, C.go, function() saveTarget(t) end, 13)
-    button("CANCELAR", 244, 384, 226, 30, C.off, function() editing, editIndex, nameEditing = nil, nil, false end, 13)
+    button(T("save_target"), 10, 384, 226, 30, C.go, function() saveTarget(t) end, 13)
+    button(T("cancel"), 244, 384, 226, 30, C.off, function() editing, editIndex, nameEditing = nil, nil, false end, 13)
   end
   -- The editor's second page: natures, level, Hidden Power, held item.
   local function drawEditorMore(t)
-    heading("NATUREZA  (nenhuma marcada = qualquer)", 12, 104)
+    heading(T("nature_head"), 12, 104)
     for nature = 0, 24 do
       local x, y = 10 + (nature % 5) * 93, 118 + floor(nature / 5) * 23
       local on = t.natures[nature] == true
       button(NATURES[nature], x, y, 89, 20, on and C.accent or C.off, function() t.natures[nature] = (not on) or nil end, 11, 10)
     end
-    heading("NÍVEL", 12, 238)
-    stepper("Mínimo", 10, 252, 228, t.levelMin > 0 and t.levelMin or "-",
+    heading(T("level_head"), 12, 238)
+    stepper(T("minimum"), 10, 252, 228, t.levelMin > 0 and t.levelMin or "-",
       function() t.levelMin = max(0, t.levelMin - 1) end, function() t.levelMin = min(100, t.levelMin + 1) end)
-    stepper("Máximo", 242, 252, 228, t.levelMax > 0 and t.levelMax or "-",
+    stepper(T("maximum"), 242, 252, 228, t.levelMax > 0 and t.levelMax or "-",
       function() t.levelMax = max(0, t.levelMax - 1) end, function() t.levelMax = min(100, t.levelMax + 1) end)
-    heading("HIDDEN POWER", 12, 284)
-    stepper("Tipo", 10, 298, 228, t.hpType < 0 and "todos" or HP_TYPES[t.hpType]:sub(1, 7),
+    heading(T("hidden_power"), 12, 284)
+    stepper(T("hp_type"), 10, 298, 228, t.hpType < 0 and T("hp_all") or HP_TYPES[t.hpType],
       function() t.hpType = (t.hpType + 1 - 1 + 17) % 17 - 1 end, function() t.hpType = (t.hpType + 1 + 1) % 17 - 1 end)
-    stepper("Poder mín.", 242, 298, 228, t.hpPower > 0 and t.hpPower or "-",
+    stepper(T("hp_power"), 242, 298, 228, t.hpPower > 0 and t.hpPower or "-",
       function() t.hpPower = t.hpPower <= 30 and 0 or t.hpPower - 5 end,
       function() t.hpPower = t.hpPower == 0 and 30 or min(70, t.hpPower + 5) end)
-    heading("ITEM", 12, 330)
-    toggle("Só se estiver segurando algum item", 10, 344, 460, t.item, function() t.item = not t.item end)
+    heading(T("item_head"), 12, 330)
+    toggle(T("only_item"), 10, 344, 460, t.item, function() t.item = not t.item end)
     editorFooter(t)
   end
   local function drawEditor()
@@ -825,9 +801,9 @@ return function(mod, Bot)
     local per = 6
     local pages = max(1, math.ceil(#list / per))
     huntPage = max(1, min(pages, huntPage or 1))
-    heading("ESPÉCIE  (Pokémon deste mapa; toque de novo para qualquer)", 12, 104)
+    heading(T("species_head"), 12, 104)
     pager(470, 100, 18, huntPage, pages, function(page) huntPage = page end)
-    if #list == 0 then text("Nenhum Pokémon selvagem neste mapa.", 12, 124, C.muted, 11) end
+    if #list == 0 then text(T("no_wild_map"), 12, 124, C.muted, 11) end
     for index = 1, per do
       local entry = list[(huntPage - 1) * per + index]
       if entry then
@@ -839,10 +815,10 @@ return function(mod, Bot)
         speciesIcon(entry.id, x + 2, y, 24)
       end
     end
-    heading("GÊNERO", 12, 178)
-    choices({ { "any", "Qualquer" }, { "M", "Macho" }, { "F", "Fêmea" } }, 10, 192, 228, 24, t.gender,
+    heading(T("gender_head"), 12, 178)
+    choices({ { "any", T("any") }, { "M", T("gender_male") }, { "F", T("gender_female") } }, 10, 192, 228, 24, t.gender,
       function(value) t.gender = value end, 11)
-    heading("HABILIDADE  (toque para trocar)", 244, 178)
+    heading(T("ability_head"), 244, 178)
     button(nameCase(abilityName(t.ability)), 242, 192, 228, 24, t.ability ~= 0 and C.accent or C.off, function()
       local h = Bot.host()
       local options = { 0 }
@@ -857,8 +833,8 @@ return function(mod, Bot)
       for index, id in ipairs(options) do if id == t.ability then at = index end end
       t.ability = options[at % #options + 1]
     end, 11)
-    heading("IVs  (toque no número para pular: 0, 20, 25, 30, 31)", 12, 224)
-    stepper("Soma mínima (máx. 186)", 10, 238, 460, t.ivTotal > 0 and t.ivTotal or "-",
+    heading(T("ivs_head"), 12, 224)
+    stepper(T("iv_sum"), 10, 238, 460, t.ivTotal > 0 and t.ivTotal or "-",
       function() t.ivTotal = max(0, t.ivTotal - 5) end, function() t.ivTotal = min(186, t.ivTotal + 5) end)
     for index, stat in ipairs(STATS) do
       local x, y = 10 + ((index - 1) % 2) * 232, 268 + floor((index - 1) / 2) * 28
@@ -871,12 +847,12 @@ return function(mod, Bot)
         t.ivs[key] = nextValue
       end)
     end
-    toggle("Só shiny", 10, 352, 460, t.shiny == true, function() t.shiny = not t.shiny end)
+    toggle(T("only_shiny"), 10, 352, 460, t.shiny == true, function() t.shiny = not t.shiny end)
     editorFooter(t)
   end
   local huntView
   local ORDERS = { "2,3,4", "4,3,2", "3,2,4", "3,4,2", "2,4,3", "4,2,3" }
-  local BALLS = { [2] = "Ultra", [3] = "Great", [4] = "Poké" }
+  local BALLS = setmetatable({}, { __index = function(_, id) return T("balls")[id] end })
   local function orderLabel(order)
     local names = {}
     for id in order:gmatch("%d+") do names[#names + 1] = BALLS[tonumber(id)] or ("#" .. id) end
@@ -887,58 +863,56 @@ return function(mod, Bot)
     local function row(y, label, key, x, w)
       toggle(label, x or 10, y, w or 460, c[key], function() c[key] = not c[key] save() end)
     end
-    heading("CAPTURA AUTOMÁTICA", 12, 42)
-    row(56, "Capturar sozinho ao achar um alvo (desligado: só para)", "huntCatch")
-    row(84, "Depois de capturar, continuar caçando", "catchContinue")
-    row(112, "Ir ao Centro depois de cada tentativa", "catchHeal")
-    heading("ANTES DA BOLA", 12, 144)
-    row(158, "Baixar o HP, só com golpe que não derruba", "catchWeaken")
-    row(186, "Baixar o HP só com False Swipe", "catchFalseSwipe")
-    row(214, "Pôr para dormir ou paralisar", "catchStatus")
-    heading("BOLAS  (toque na ordem para trocar)", 12, 246)
-    button("Ordem:  " .. orderLabel(c.ballOrder), 10, 260, 290, 26, C.off, function()
+    heading(T("catch_head"), 12, 42)
+    row(56, T("catch_on"), "huntCatch")
+    row(84, T("catch_continue"), "catchContinue")
+    row(112, T("catch_heal"), "catchHeal")
+    heading(T("before_ball"), 12, 144)
+    row(158, T("weaken"), "catchWeaken")
+    row(186, T("false_swipe"), "catchFalseSwipe")
+    row(214, T("status_move"), "catchStatus")
+    heading(T("balls_head"), 12, 246)
+    button(F("order", orderLabel(c.ballOrder)), 10, 260, 290, 26, C.off, function()
       local at = 1
       for index, order in ipairs(ORDERS) do if order == c.ballOrder then at = index end end
       c.ballOrder = ORDERS[at % #ORDERS + 1]
       save()
     end, 12)
-    row(260, "Master Ball", "useMaster", 304, 166)
+    row(260, T("master_ball"), "useMaster", 304, 166)
     local x = 12
     local any = false
     for _, id in ipairs({ 1, 2, 3, 4 }) do
       if Bot.session() and Bot.host() and Bot.hasItem(id) then
-        x = x + pill(id == 1 and "Master" or BALLS[id], x, 290, C.off, C.text, 10) + 4
+        x = x + pill(BALLS[id], x, 290, C.off, C.text, 10) + 4
         any = true
       end
     end
-    line(any and "na mochila agora" or "Nenhuma dessas bolas na mochila", any and x + 4 or 12, 291, any and C.muted or C.warn, 10, 300)
-    heading("SAFARI", 12, 314)
+    line(any and T("in_bag") or T("no_balls_bag"), any and x + 4 or 12, 291, any and C.muted or C.warn, 10, 300)
+    heading(T("safari_head"), 12, 314)
     local money = Bot.session() and Bot.money()
     if money then
-      line(("Dinheiro: %d  =  %d entrada(s)"):format(money, floor(money / Bot.SAFARI_PRICE)), 200, 314, C.muted, 10, 270, "right")
+      line(F("money_entries", money, floor(money / Bot.SAFARI_PRICE)), 200, 314, C.muted, 10, 270, "right")
     end
-    stepper("Iscas", 10, 328, 228, c.safariBaits,
+    stepper(T("baits"), 10, 328, 228, c.safariBaits,
       function() c.safariBaits = max(0, c.safariBaits - 1) save() end, function() c.safariBaits = min(5, c.safariBaits + 1) save() end)
-    stepper("depois bolas", 242, 328, 228, c.safariBalls,
+    stepper(T("then_balls"), 242, 328, 228, c.safariBalls,
       function() c.safariBalls = max(1, c.safariBalls - 1) save() end, function() c.safariBalls = min(9, c.safariBalls + 1) save() end)
     local RE = { 0, 1, 2, 3, 5, 10, 20, 50, -1 }
     local at = 1
     for index, value in ipairs(RE) do if value == c.safariReentries then at = index end end
-    stepper("Reentrar quando a visita acabar", 10, 356, 460,
-      c.safariReentries == -1 and "sempre" or (c.safariReentries == 0 and "não" or (c.safariReentries .. "x")),
+    stepper(T("reenter"), 10, 356, 460,
+      c.safariReentries == -1 and T("always") or (c.safariReentries == 0 and T("no") or (c.safariReentries .. "x")),
       function() c.safariReentries = RE[max(1, at - 1)] save() end, function() c.safariReentries = RE[min(#RE, at + 1)] save() end)
-    button("< Voltar", 10, 392, 226, 28, C.off, function() huntView = nil end, 13)
+    button(T("back"), 10, 392, 226, 28, C.off, function() huntView = nil end, 13)
   end
   local function drawReset()
     local c = Bot.config
     box(10, 44, 460, 50, C.card, 8)
-    text("Caça por reset", 22, 49, C.text, 15)
-    line("Iniciais, presentes, fósseis e lendários: salva na frente e recarrega até vir o alvo", 22, 72, C.muted, 10, 436)
-    heading("COMO FUNCIONA", 12, 100)
+    text(T("reset_title"), 22, 49, C.text, 15)
+    line(T("reset_sub"), 22, 72, C.muted, 10, 436)
+    heading(T("how_it_works"), 12, 100)
     local steps = {
-      "Fique de frente para o Pokémon (presente: deixe uma vaga na equipe)",
-      "INICIAR salva o jogo ali: esse save vira o ponto de volta",
-      "O bot aperta A, confere com os alvos e recarrega se não for",
+      T("reset_step1"), T("reset_step2"), T("reset_step3"),
     }
     for index, step in ipairs(steps) do
       local y = 114 + (index - 1) * 26
@@ -951,26 +925,26 @@ return function(mod, Bot)
     -- the one thing that can cost the player: the save lock
     box(10, 196, 460, 40, mix(C.card, C.warn, 0.45), 8)
     box(15, 202, 3, 28, C.warn, 2)
-    line("Enquanto a caça existir o jogo não salva, nem ao fechar.", 26, 200, C.text, 11, 436)
-    line("FINALIZAR, ou sair do ponto com ela pausada, libera o salvamento.", 26, 217, C.text, 11, 436)
-    heading("QUANDO O ALVO APARECER EM BATALHA", 12, 244)
-    toggle("Tentar capturar sozinho", 10, 258, 460, c.resetCatch, function() c.resetCatch = not c.resetCatch save() end)
+    line(T("lock1"), 26, 200, C.text, 11, 436)
+    line(T("lock2"), 26, 217, C.text, 11, 436)
+    heading(T("when_target"), 12, 244)
+    toggle(T("try_catch"), 10, 258, 460, c.resetCatch, function() c.resetCatch = not c.resetCatch save() end)
     if c.resetCatch then
-      line("Usa as regras da Captura automática. Se falhar, recarrega e traz o mesmo", 12, 288, C.muted, 10, 456)
-      line("Pokémon de volta (até 10 vezes); se não voltar, conta como falha e segue.", 12, 302, C.muted, 10, 456)
+      line(T("reset_catch1"), 12, 288, C.muted, 10, 456)
+      line(T("reset_catch2"), 12, 302, C.muted, 10, 456)
     else
-      line("Desligado: o bot para com a batalha aberta e a captura fica com você.", 12, 288, C.muted, 10, 456)
+      line(T("reset_nocatch"), 12, 288, C.muted, 10, 456)
     end
-    heading("VALE O QUE ESTÁ NA ABA CAÇA", 12, 322)
+    heading(T("uses_hunt_tab"), 12, 322)
     local x = 12
-    x = x + pill(#c.targets .. (#c.targets == 1 and " alvo" or " alvos"), x, 336, #c.targets > 0 and C.accent or C.off, C.text, 10) + 4
-    pill(c.huntShiny and "qualquer shiny: sim" or "qualquer shiny: não", x, 336, c.huntShiny and C.accent or C.off, C.text, 10)
-    button("< Voltar", 10, 372, 226, 32, C.off, function() huntView = nil end)
-    button("SALVAR AQUI E INICIAR", 244, 372, 226, 32, C.go, function()
+    x = x + pill(#c.targets == 1 and T("target_one") or F("target_many", #c.targets), x, 336, #c.targets > 0 and C.accent or C.off, C.text, 10) + 4
+    pill(c.huntShiny and T("any_shiny_yes") or T("any_shiny_no"), x, 336, c.huntShiny and C.accent or C.off, C.text, 10)
+    button(T("back"), 10, 372, 226, 32, C.off, function() huntView = nil end)
+    button(T("save_start"), 244, 372, 226, 32, C.go, function()
       if Bot.start("reset") then tab = "control" huntView = nil end
     end, 13)
     if Bot.reason == "no_targets" then
-      line("Crie um alvo ou ligue \"qualquer SHINY\" na aba Caça", 12, 412, C.warn, 11, 456)
+      line(T("reset_need"), 12, 412, C.warn, 11, 456)
     elseif Bot.reason == "no_save" or Bot.reason == "no_game" then
       line(REASONS[Bot.reason], 12, 412, C.warn, 11, 456)
     end
@@ -980,19 +954,19 @@ return function(mod, Bot)
     if huntView == "catch" then return drawCatch() end
     if huntView == "reset" then return drawReset() end
     local c = Bot.config
-    toggle("Parar também em qualquer SHINY", 10, 44, 460, c.huntShiny, function() c.huntShiny = not c.huntShiny save() end)
-    toggle("Lutar com os que não são alvo (ganhar EXP); senão, foge", 10, 74, 460, c.huntExp, function() c.huntExp = not c.huntExp save() end)
-    toggle("Usar Sweet Scent em vez de andar (rota de grama)", 10, 104, 460, c.huntScent, function() c.huntScent = not c.huntScent save() end)
+    toggle(T("hunt_shiny"), 10, 44, 460, c.huntShiny, function() c.huntShiny = not c.huntShiny save() end)
+    toggle(T("hunt_exp"), 10, 74, 460, c.huntExp, function() c.huntExp = not c.huntExp save() end)
+    toggle(T("hunt_scent"), 10, 104, 460, c.huntScent, function() c.huntScent = not c.huntScent save() end)
     local perPage = 5
     local pages = max(1, math.ceil(#c.targets / perPage))
     targetPage = max(1, min(pages, targetPage))
-    text(("ALVOS  (basta bater com um deles)   %d de %d"):format(#c.targets, Bot.MAX_TARGETS), 12, 134, C.muted, 10)
+    text(F("targets_head", #c.targets, Bot.MAX_TARGETS), 12, 134, C.muted, 10)
     pager(470, 130, 18, targetPage, pages, function(page) targetPage = page end)
     if #c.targets == 0 then
       box(10, 150, 460, 76, C.card, 8)
-      centred("Nenhum alvo ainda", 10, 162, 460, 20, C.text, 14)
-      centred("Crie um com \"+ Novo alvo\": espécie, gênero, natureza, IVs, shiny...", 10, 186, 460, 16, C.muted, 11)
-      centred("Sem alvos, a caça por reset ainda pode parar em qualquer shiny.", 10, 202, 460, 16, C.muted, 11)
+      centred(T("no_targets_yet"), 10, 162, 460, 20, C.text, 14)
+      centred(T("targets_how"), 10, 186, 460, 16, C.muted, 11)
+      centred(T("targets_reset"), 10, 202, 460, 16, C.muted, 11)
     end
     for row = 1, perPage do
       local index = (targetPage - 1) * perPage + row
@@ -1004,36 +978,36 @@ return function(mod, Bot)
         if shown.species ~= 0 then speciesIcon(shown.species, 14, y + 2, 32) end
         local any = shown.species == 0
         -- its name when it has one, else the species
-        local title = (shown.name and shown.name ~= "") and shown.name or (any and "Qualquer espécie" or speciesName(shown.species))
+        local title = (shown.name and shown.name ~= "") and shown.name or (any and T("any_species") or speciesName(shown.species))
         line(title, any and 20 or 52, y + 2, C.text, 13, any and 328 or 296)
         -- the filters; the species is already the title (or named next to it)
         local filters = describe(shown, not (shown.name and shown.name ~= "" and not any))
-        line(filters ~= "" and filters or "sem outros filtros", any and 20 or 52, y + 20, C.muted, 10, any and 328 or 296)
-        button("editar", 356, y + 5, 64, 26, C.off, function()
+        line(filters ~= "" and filters or T("no_filters"), any and 20 or 52, y + 20, C.muted, 10, any and 328 or 296)
+        button(T("edit"), 356, y + 5, 64, 26, C.off, function()
           editIndex, editing, editPage = index, clone(t), 1
         end, 11)
         button("x", 426, y + 5, 36, 26, C.stop, function() table.remove(c.targets, index) save() end, 12)
       end
     end
     if #c.targets < Bot.MAX_TARGETS then
-      button("+ Novo alvo", 10, 352, 226, 32, C.off, function()
+      button(T("new_target"), 10, 352, 226, 32, C.off, function()
         editPage = 1
         editIndex, editing = nil, { species = 0, gender = "any", ivTotal = 0, ability = 0, shiny = false,
           ivs = { hp = 0, atk = 0, def = 0, spe = 0, spa = 0, spd = 0 } }
       end)
     end
-    button("INICIAR CAÇA", 244, 352, 226, 32, C.go, function()
+    button(T("start_hunt"), 244, 352, 226, 32, C.go, function()
       if Bot.start("hunt") then tab = "control" end
     end, 14)
-    button("Captura automática: " .. (c.huntCatch and "LIGADA" or "desligada") .. "  (configurar >)", 10, 388, 296, 24,
+    button(F("catch_state", c.huntCatch and T("on_caps") or T("off_low")), 10, 388, 296, 24,
       C.off, function() huntView = "catch" end, 11)
-    button("Caça por reset >", 312, 388, 158, 24, C.off, function() huntView = "reset" end, 12)
+    button(T("reset_btn"), 312, 388, 158, 24, C.off, function() huntView = "reset" end, 12)
     if Bot.reason == "no_targets" or Bot.reason == "no_route" or Bot.reason == "repel_on" or Bot.reason == "pc_full" then
       line(REASONS[Bot.reason], 12, 415, C.warn, 11, 456)
     end
   end
 
-  local TABS = { { "control", "Controle" }, { "routes", "Rotas" }, { "team", "Equipe" }, { "stops", "Treino" }, { "hunt", "Caça" } }
+  local TABS = { { "control" }, { "routes" }, { "team" }, { "stops" }, { "hunt" } }
   function Panel.draw(_, w, h)
     hits = {}
     w, h = tonumber(w) or Panel.W, tonumber(h) or Panel.H
@@ -1048,12 +1022,12 @@ return function(mod, Bot)
     for index, entry in ipairs(TABS) do
       local x = 10 + (index - 1) * 93
       local current = tab == entry[1]
-      button(entry[2], x, 8, 90, 28, current and C.accent or C.card, function() tab = entry[1] end, 12, 14)
+      button(T("tabs")[entry[1]], x, 8, 90, 28, current and C.accent or C.card, function() tab = entry[1] end, 12, 14)
     end
     local ok, err = pcall(tab == "routes" and drawRoutes or tab == "stops" and drawStops or tab == "team" and drawTeam
       or tab == "hunt" and drawHunt or drawControl)
     Panel.lastError = (not ok) and tostring(err) or nil
-    if not ok then text("Erro no painel: " .. tostring(err), 12, 60, C.warn, 12, 456) end
+    if not ok then text(F("panel_error", tostring(err)), 12, 60, C.warn, 12, 456) end
     G.pop()
   end
   -- While a target's name is being typed, the keyboard belongs to the panel.

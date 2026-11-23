@@ -6,6 +6,9 @@
 | --- | --- |
 | `manifest.json` | Mod id `trainer_pilot`, API 3, FireRed and LeafGreen, optional dependency `trainer_desk`, permission `engine_internals`. |
 | `main.lua` | The bot: saved data, the game, walking, travelling, battle, catching, field work, the main loop and hooks. Shares itself as `mod.exports.bot`. |
+| `i18n.lua` | Text in the chosen language (`T`, `F`) and fonts that can draw Japanese (`font`). The same file in all three Trainer mods. |
+| `lang/*.lua` | One table of texts per language: `en` (the reference), `es`, `pt`, `ja`. |
+| `fonts/` | `NotoSansJP-subset.ttf` (kana and the characters these mods use) and its license, `OFL.txt`. |
 | `panel.lua` | The control panel drawn inside Trainer Desk. Gets the `Bot` table and draws from it; buttons call `Bot` functions. |
 
 ## Map of main.lua

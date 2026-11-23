@@ -384,6 +384,8 @@ function love.load()
   local function newMod(store)
     local m = { generation = 3, exports = {} }
     m.read = function(_, n) return read(n) end
+    -- TEST_LANG picks the panel's language (en by default)
+    m.options = { define = function() end, get = function(_, k) if k == "language" then return os.getenv("TEST_LANG") or "en" end end }
     m.hooks = { wrap = function(_, n, f) hooks[n] = f end }
     m.events = { on = function(_, n, f) events[n] = f end }
     m.log = { warn = function(_, f, ...) logs[#logs + 1] = f:format(...); print("WARN", logs[#logs]) end, info = function() end }

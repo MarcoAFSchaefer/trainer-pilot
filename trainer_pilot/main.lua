@@ -15,6 +15,20 @@
 -- See docs/ARCHITECTURE.md for a map of this file.
 return function(mod)
   if mod.generation ~= 3 then return end
+
+  -- The panel's language (lang/<code>.lua, read through i18n.lua).
+  if mod.options and mod.options.define then
+    pcall(mod.options.define, mod.options, {
+      { key = "language", label = "LANGUAGE", type = "choice", default = "en",
+        choices = { { "ENGLISH", "en" }, { "ESPANOL", "es" }, { "PORTUGUES", "pt" }, { "JAPANESE", "ja" } },
+        description = "Language of the control panel. Names that come from the game (Pokemon, moves, items) stay in the game's language." },
+    })
+  end
+  local function language()
+    local ok, value = pcall(function() return mod.options:get("language") end)
+    return ok and value or "en"
+  end
+  local I18n = assert(load(assert(mod:read("i18n.lua")), "@trainer_pilot/i18n.lua"))()(mod, language)
   local floor, max, min, abs = math.floor, math.max, math.min, math.abs
 
   local function req(name)
@@ -1020,7 +1034,7 @@ return function(mod)
   -- Recording
   ---------------------------------------------------------------------------
   local function routeName(kind, map)
-    local label = ({ grass = "Grama", fish = "Pesca", seeker = "VS Seeker", heal = "Cura", scent = "Sweet Scent" })[kind]
+    local label = I18n.T("kinds")[kind] or kind
     local place = tostring(map or "?"):gsub("^MAP_", ""):gsub("_", " "):lower():gsub("^%l", string.upper)
     local base, n = label .. " " .. place, 1
     local name = base
@@ -2698,7 +2712,7 @@ return function(mod)
   Bot.attacks, Bot.allowed, Bot.hpPct, Bot.isEgg = attacks, allowed, hpPct, isEgg
   local panel
   local okPanel, errPanel = pcall(function()
-    panel = assert(loadstring(assert(mod:read("panel.lua")), "@trainer_pilot/panel.lua"))()(mod, Bot)
+    panel = assert(loadstring(assert(mod:read("panel.lua")), "@trainer_pilot/panel.lua"))()(mod, Bot, I18n)
   end)
   if not okPanel then mod.log:warn("panel unavailable: %s", tostring(errPanel)) end
   -- Typing a target's name: the keys go to the panel, not to the game (and do not pause the bot).

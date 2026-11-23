@@ -11,6 +11,8 @@ xvfb-run -a -s "-screen 0 1280x800x24" love tests
 
 `BOT_MOD` is the path to the `trainer_pilot` mod folder; `TEST_OUT` (default `/tmp/kg_out`) is where screenshots of the panel are written.
 
+Set `TEST_LANG` to `en`, `es`, `pt` or `ja` to run the checks with that language and get the screenshots in it (default `en`).
+
 The run ends with `ALL BOT CHECKS PASSED`; a failing check prints `CHECK FAILED` with the reason and stops.
 
 The stand-in has no pass-through building and no double battle, and passing here says nothing about how the real game behaves at those points (see docs/ENGINE_NOTES.md).
