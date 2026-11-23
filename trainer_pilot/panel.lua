@@ -1,4 +1,4 @@
--- Trainer Pilot's control panel: four tabs drawn into a Trainer Desk panel. Everything
+-- Trainer Pilot's control panel: five tabs drawn into a Trainer Desk panel. Everything
 -- clickable is registered as a rectangle while drawing and looked up when the
 -- pointer goes down.
 return function(mod, Bot)

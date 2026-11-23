@@ -1,43 +1,60 @@
 # Trainer Pilot
 
-Bot de treino e caça para Pokémon FireRed/LeafGreen no Gen1Recomp. Joga apertando os botões do próprio jogo; qualquer botão seu pausa o bot.
+A training and hunting bot for Pokémon FireRed/LeafGreen on Gen1Recomp (mod API 3). It plays by pressing the game's own buttons; any button you press pauses it.
 
-## O que faz
+## What it does
 
-- **Rotas:** grama (gravada andando), pesca, VS Seeker e Sweet Scent (pontos marcados).
-- **Treino:** batalhas com quem você marca, golpes proibidos por Pokémon, paradas por nível, shiny, espécie, golpe novo, evolução e PP.
-- **Treino de EV:** alvo por atributo e por Pokémon; foge das espécies que dariam EV errado; para no alvo.
-- **Cura:** volta ao Centro Pokémon mais próximo por um mapa de ligações do mundo (ou por um caminho gravado), ou usa poções e éteres até o limite que você escolher.
-- **Obstáculos no caminho:** Surf, Cut, Rock Smash, Strength e Waterfall.
-- **Caça:** até 30 alvos com nome e filtro por espécie, gênero, natureza, habilidade, IVs, Hidden Power, nível, item e shiny; captura automática opcional; Safari; caça por reset para iniciais, presentes e lendários.
-- **Controle:** velocidade do jogo durante a rodada, números da rodada, histórico das últimas 40 paradas.
+- **Routes:** grass routes recorded by walking them; fishing, VS Seeker and Sweet Scent spots marked where you stand.
+- **Training:** fights with the party members you mark, with moves you can forbid per Pokémon; stops at a target level, a shiny, a species from your list, a new move, an evolution, or running out of PP.
+- **EV training:** a target per stat and per Pokémon (up to 252); runs from species that would give the wrong EVs; stops when the target is reached. Not on VS Seeker routes.
+- **Healing:** walks to the nearest Pokémon Center through a map of how the world's maps connect (or along a recorded healing path), or uses Potions and Ethers from the bag up to the limit you set.
+- **Obstacles on the way:** Surf, Cut, Rock Smash, Strength and Waterfall.
+- **Hunting:** up to 30 named targets that filter by species, gender, nature, ability, IVs, Hidden Power, level, held item and shiny; optional automatic catching (weaken without making it faint, sleep or paralysis, balls in your order); the Safari Zone; reset hunting for starters, gifts and legendaries.
+- **Control:** game speed while it runs, the numbers of the run, and a history of the last 40 stops.
 
-Não inicia numa rota de grama com Repel ativo e para se um Repel for usado no meio.
+It will not start on a grass route with a Repel active, and stops if a Repel is used during the run. It stops by itself when it runs out of balls or when the party and PC are full.
 
-## Instalação
+## Installation
 
-Copie a pasta `trainer_pilot` para a pasta de mods do jogo:
+Copy the `trainer_pilot` folder into the game's mods folder:
 
 ```
 %APPDATA%\pokemon-love2d\mods\trainer_pilot
 ```
 
-O painel de controle aparece nas docas do Trainer Desk.
+The control panel appears in the Trainer Desk docks, so Trainer Desk is needed to use it.
 
-## Testes
+## Panel
 
-Rodam no Linux com LÖVE 11.5 e um X virtual, sobre um jogo simulado:
+| Tab | What is there |
+| --- | --- |
+| Control | Start state, the reason of the last stop, the run's numbers, encounters by species, game speed, rod choice, CONTINUE / FINISH / STOP, and the stop history. |
+| Routes | Record a grass route or a healing path by walking; mark a fishing, VS Seeker or Sweet Scent spot; choose the training route. |
+| Team | Who fights, forbidden moves, and EV targets per Pokémon. |
+| Training | Stop conditions, healing (Center, HP threshold, potions and ethers), and START TRAINING. |
+| Hunt | Targets and their editor, automatic catching, the Safari Zone, reset hunting, and START HUNT. |
 
-```
-BOT_MOD=$PWD/trainer_pilot xvfb-run -a love tests
-```
+The panel text is in Portuguese.
 
-O resultado esperado é `ALL BOT CHECKS PASSED`.
+## Reset hunting
 
-## Notas
+Stand in front of the Pokémon (or the person who gives it), with room in the party, and start a reset hunt. The bot saves the game there, presses A, looks at what came, and loads the save again until it matches a target or is shiny. While the hunt exists, nothing else may write the save, so a bad attempt is never kept; the lock is released when the target is found or caught, when you press FINISH, or when you walk away from the spot.
 
-`NOTAS.md` reúne as decisões, APIs do jogo usadas e armadilhas encontradas ao longo do desenvolvimento.
+## Documentation
 
-## Histórico
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the bot is organised, its main loop and hooks.
+- [docs/DATA.md](docs/DATA.md): settings, saved data formats and stop reasons.
+- [docs/ENGINE_NOTES.md](docs/ENGINE_NOTES.md): the game functions the bot relies on and the pitfalls found on the way.
+- [CHANGELOG.md](CHANGELOG.md): version history.
+- [tests/README.md](tests/README.md): running the automated checks.
 
-Até a versão 0.24.0 se chamava PokeBot (id `poke_bot`).
+## Known limits
+
+- Caves with puzzles (Victory Road, Seafoam Islands, Icefall Cave, Pokémon Mansion, Lost Cave) are never crossed; record a healing path there.
+- In double battles only the first opponent is targeted.
+- Item healing restores HP and PP only: it does not cure status or revive.
+- Some places are still unreliable: hitches on Routes 15 and 14 and a "blocked path" on Route 10.
+
+## History
+
+Until version 0.24.0 this mod was called PokeBot (id `poke_bot`).

@@ -1,12 +1,18 @@
--- Trainer Pilot: a training bot that plays through the game's own buttons.
+-- Trainer Pilot: a training and hunting bot that plays through the game's own buttons.
 --
--- It walks a route the player recorded, fights with the battle menu, walks a
--- recorded path to the Pokémon Center when the team needs it, and stops on
--- the conditions the player chose. Nothing is written to the game's state
--- except what a player could do: button presses, using an item from the bag
--- and reordering the party.
+-- It walks a route the player recorded (or stands on a marked spot), fights
+-- with the battle menu, finds its way to the nearest Pokémon Center through a
+-- map of how maps connect, and stops on the conditions the player chose. It
+-- can hunt for Pokémon that match detailed targets and catch them, train EVs,
+-- and hunt by resetting (save in front of a Pokémon, reload until it fits).
+--
+-- What it changes in the game is limited to what a player could do: button
+-- presses, using an item from the bag, putting a party member in front, and,
+-- for reset hunting, saving once and loading that save again (while such a hunt
+-- exists, no other save may be written over it).
 --
 -- main.lua holds the bot; panel.lua draws its control panel for Trainer Desk.
+-- See docs/ARCHITECTURE.md for a map of this file.
 return function(mod)
   if mod.generation ~= 3 then return end
   local floor, max, min, abs = math.floor, math.max, math.min, math.abs
