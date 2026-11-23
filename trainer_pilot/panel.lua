@@ -360,15 +360,31 @@ return function(mod, Bot, I18n)
       box(10, 326, 460, 40, mix(C.card, C.stop, 0.6), 8)
       text(F("recording_n", KIND[rec.kind], #rec.points), 22, 338, C.text, 13)
     else
-      -- how many of each target this run has found (hunting and reset hunting)
-      local hits, list = stats.hits or {}, {}
-      if Bot.mode == "hunt" or Bot.mode == "reset" or next(hits) then
-        for index, target in ipairs(c.targets) do
-          list[#list + 1] = { species = target.species, shiny = target.shiny, count = hits[index] or 0,
-            name = target.name or (target.species ~= 0 and speciesName(target.species) or T("any")) }
+      -- how many of each target's species this run has met, whatever the target's
+      -- other filters; a target for any species brings in every species met
+      local seenBy, list, listed = stats.seen or {}, {}, {}
+      if Bot.mode == "hunt" or Bot.mode == "reset" then
+        local anySpecies = false
+        for _, target in ipairs(c.targets) do
+          if target.species == 0 then anySpecies = true
+          elseif not listed[target.species] then
+            listed[target.species] = true
+            list[#list + 1] = { species = target.species, count = seenBy[target.species] or 0,
+              name = target.name or speciesName(target.species) }
+          end
         end
-        if (hits.shiny or 0) > 0 then list[#list + 1] = { species = 0, shiny = true, count = hits.shiny, name = T("shiny_caps") } end
-        table.sort(list, function(a, b) return a.count > b.count end)
+        if anySpecies then
+          for species, count in pairs(seenBy) do
+            if not listed[species] then
+              listed[species] = true
+              list[#list + 1] = { species = species, count = count, name = speciesName(species) }
+            end
+          end
+        end
+        table.sort(list, function(a, b)
+          if a.count ~= b.count then return a.count > b.count end
+          return a.species < b.species
+        end)
       end
       if #list > 0 then
         box(10, 326, 460, 40, C.card, 8)

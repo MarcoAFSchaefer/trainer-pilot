@@ -41,7 +41,7 @@ The control panel appears in the Trainer Desk docks, so Trainer Desk is needed t
 
 | Tab | What is there |
 | --- | --- |
-| Control | Start state, the reason of the last stop, the run's numbers, finds per hunt target, game speed, rod choice, CONTINUE / FINISH / STOP, and the stop history. |
+| Control | Start state, the reason of the last stop, the run's numbers, encounters of each hunt target's species, game speed, rod choice, CONTINUE / FINISH / STOP, and the stop history. |
 | Routes | Record a grass route or a healing path by walking; mark a fishing, VS Seeker or Sweet Scent spot; choose the training route. |
 | Team | Who fights, forbidden moves, and EV targets per Pokémon. |
 | Training | Stop conditions, healing (Center, HP threshold, potions and ethers), and START TRAINING. |

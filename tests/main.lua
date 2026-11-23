@@ -593,13 +593,14 @@ function love.load()
   -- what the Control tab shows while hunting: finds per target
   local savedTargets, savedMode = Bot.config.targets, Bot.mode
   Bot.config.targets = { { species = 129, name = "Magikarp IV", gender = "any", ivTotal = 0, ivs = {}, ability = 0 },
-    { species = 19, gender = "any", ivTotal = 0, ivs = {}, ability = 0, shiny = true } }
-  Bot.mode, Bot.stats.hits = "hunt", { [1] = 3, shiny = 1 }
+    { species = 0, gender = "any", ivTotal = 0, ivs = {}, ability = 0, shiny = true } }
+  local savedSeen = Bot.stats.seen
+  Bot.mode, Bot.stats.hits, Bot.stats.seen = "hunt", { [1] = 3, shiny = 1 }, { [129] = 12, [19] = 30, [16] = 5 }
   panel.draw(); panel.pointer("down", 60, 20)
   G.setCanvas(canvas); G.clear(0, 0, 0, 1); panel.draw(); G.setCanvas()
   check(panel.lastError == nil, "the Control tab draws the finds per target: " .. tostring(panel.lastError))
   local ft = io.open(OUT .. "/bot-targets.png", "wb"); ft:write(canvas:newImageData():encode("png"):getString()); ft:close()
-  Bot.config.targets, Bot.mode, Bot.stats.hits = savedTargets, savedMode, {}
+  Bot.config.targets, Bot.mode, Bot.stats.hits, Bot.stats.seen = savedTargets, savedMode, {}, savedSeen
   for index, x in ipairs({ 60, 150, 240, 330, 420 }) do
     panel.draw(); panel.pointer("down", x, 20)
     G.setCanvas(canvas); G.clear(0, 0, 0, 1); panel.draw(); G.setCanvas()

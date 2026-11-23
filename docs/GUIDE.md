@@ -105,7 +105,7 @@ With **Try to catch it by itself** on, a failed catch reloads and brings the sam
 
 - What the bot is doing, and why it stopped (gold for good news, red for a problem).
 - The run in numbers: battles, heals, items used, time; targets found and caught when hunting.
-- While hunting, how many of each target the run has found (a shiny that matched no target counts on its own).
+- While hunting, how many times the run has met each target's species, whatever the target's other filters; a target for any species lists every species met.
 - **Speed while running:** the game speed while the bot runs; your own speed comes back when it stops.
 - **Stop history:** the last 40 stops, with the reason, route, time and place.
 

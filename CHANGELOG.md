@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.28.1
+
+- Control tab: while hunting, the encounters of each target's species (whatever the target's other filters), instead of the finds; a target for any species lists every species met.
+
 ## 0.28.0
 
 - Walking decides at once instead of waiting: when there is no way to a place at all (a ledge, a cave in between), the bot plans around it straight away; it only waits, 4 seconds at most, when a person is standing in the way. The 0.27.0 retries are gone.
