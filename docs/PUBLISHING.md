@@ -6,8 +6,7 @@ How this mod gets to players: as a GitHub release, listed in the Gen1Recomp mod 
 
 The repository must be public on GitHub. Once it exists:
 
-- Set `"github": "<owner>/<repo>"` in the mod's `manifest.json`. The launcher uses it for updates and "Other versions".
-- Replace `OWNER` in `index/<Author>@<id>/meta.json` (`repo` and `github`).
+- The repository is `https://github.com/MarcoAFSchaefer/trainer-pilot`. `manifest.json` names it in `"github"` (the launcher uses it for updates and "Other versions"), and so does the index entry.
 
 ## 2. Releases
 
