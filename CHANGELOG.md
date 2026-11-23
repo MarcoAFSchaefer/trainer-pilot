@@ -4,6 +4,8 @@
 
 - Control panel in English, Spanish, Portuguese and Japanese (new Language option; English by default), including stop reasons, natures, Hidden Power types and route names.
 - Japanese text drawn with a bundled Noto Sans JP subset.
+- Declares the engine versions it supports (`game_version`).
+- MIT license, release workflow and a ready mod index entry (docs/PUBLISHING.md).
 
 ## 0.25.0
 

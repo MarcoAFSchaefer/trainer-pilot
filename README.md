@@ -58,6 +58,7 @@ Each language is a file in `trainer_pilot/lang/` (`en.lua`, `es.lua`, `pt.lua`, 
 - [docs/DATA.md](docs/DATA.md): settings, saved data formats and stop reasons.
 - [docs/ENGINE_NOTES.md](docs/ENGINE_NOTES.md): the game functions the bot relies on and the pitfalls found on the way.
 - [docs/TRANSLATING.md](docs/TRANSLATING.md): how the translations work and how to change them.
+- [docs/PUBLISHING.md](docs/PUBLISHING.md): releases and the Gen1Recomp mod index.
 - [CHANGELOG.md](CHANGELOG.md): version history.
 - [tests/README.md](tests/README.md): running the automated checks.
 
@@ -71,3 +72,7 @@ Each language is a file in `trainer_pilot/lang/` (`en.lua`, `es.lua`, `pt.lua`, 
 ## History
 
 Until version 0.24.0 this mod was called PokeBot (id `poke_bot`).
+
+## License
+
+MIT (see LICENSE). The bundled Japanese font is under the SIL Open Font License (`fonts/OFL.txt`).

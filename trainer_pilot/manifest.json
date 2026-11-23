@@ -10,6 +10,7 @@
     "firered",
     "leafgreen"
   ],
+  "game_version": "0.0.0-dev || >=0.3.93 <2.0.0",
   "affects_link": false,
   "dependencies": [],
   "optional_dependencies": [
@@ -19,5 +20,5 @@
   "permissions": [
     "engine_internals"
   ],
-  "description": "A training and hunting bot for FireRed and LeafGreen that plays with the game's own buttons: walks a recorded route or stands on a marked spot (grass, fishing, VS Seeker, Sweet Scent), fights, heals at the nearest Pokemon Center or with bag items, trains EVs, hunts and catches Pokemon that match detailed targets (also by soft reset), and stops on the conditions you choose. Its control panel lives in the Trainer Desk window."
+  "description": "A training and hunting bot for FireRed and LeafGreen that plays with the game's own buttons: walks a recorded route or stands on a marked spot (grass, fishing, VS Seeker, Sweet Scent), fights, heals at the nearest Pokemon Center or with bag items, trains EVs, hunts and catches Pokemon that match detailed targets (also by soft reset), and stops on the conditions you choose. Its control panel lives in the Trainer Desk window. English, Spanish, Portuguese and Japanese."
 }
