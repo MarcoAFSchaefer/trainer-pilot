@@ -1625,8 +1625,12 @@ return function(mod)
     askReload()
   end
   -- How a long reset hunt is doing: every 25 attempts one line goes to the mod
-  -- cache (log/perf) with the pace and what the game is holding in memory, so
-  -- a hunt that gets slower shows where. Columns:
+  -- cache (log/perf) with the pace and what the game is holding in memory.
+  -- Every reload of the save (the game's own quick load, F2, does the same)
+  -- leaves about 0.1 MB of Lua memory behind that is never given back, and the
+  -- attempts get slower as it piles up: about a third slower after 1,700
+  -- attempts. Nothing a mod can reach holds it; only restarting the game
+  -- clears it. This record is how that was measured. Columns:
   --   attempts | seconds since the hunt began | seconds per attempt (last 25) |
   --   frames per second | Lua memory (MB) | texture memory (MB) | canvases | images | fonts
   local perf = { lines = {} }
@@ -1646,59 +1650,16 @@ return function(mod)
     if mod.cache and mod.cache.write then mod.cache:write("log/perf", table.concat(perf.lines, "\n") .. "\n") end
   end
   Bot.perfLines = function() return perf.lines end
-  -- One-off: what is growing (see leak.lua). Looked at twice in a hunt.
-  local Leak
-  local function leakCheck(resets)
-    if not Leak then
-      Leak = assert(loadstring(assert(mod:read("leak.lua")), "@trainer_pilot/leak.lua"))()(mod, function()
-        local list = { ["pilot.Bot"] = Bot, ["pilot.run"] = run }
-        -- the engine modules the bot already holds
-        for name, value in pairs(host()) do list["engine." .. tostring(name)] = value end
-        for _, id in ipairs({ "trainer_desk", "trainer_lens", "trainer_journey", "trainer_controls", "trainer_tactics" }) do
-          local other = mod.find and mod.find(id)
-          if other and type(other.exports) == "table" then list[id .. ".exports"] = other.exports end
-        end
-        return list
-      end)
-    end
-    Leak.note(session())
-    if resets == 60 or resets == 160 then Leak.sample(game, session(), resets) end
-  end
-  Bot.leakCheck = leakCheck
-
   function Bot.reloadNow()
     local r = Bot.running and run and run.reset
     if not (r and r.state == "reload") then return end
     local h = host()
     release()
-    -- One-off: for 20 attempts, memory after a full collection at each stage,
-    -- to tell which part of an attempt keeps what it should let go.
-    local n = (Bot.stats.resets or 0) + 1
-    local probe = (not r.replay and n > 60 and n <= 80) and perf or nil
-    local function settled()
-      collectgarbage("collect"); collectgarbage("collect")
-      return collectgarbage("count")
-    end
-    local a = probe and settled()
-    local c
     local ok, err = pcall(function()
       game:_tearDownField()
       if h.Ghosts and h.Ghosts.clear then pcall(h.Ghosts.clear) end
-      c = probe and settled()
       game:_handleBootAction({ action = "continue" })
     end)
-    if probe and a and c then
-      local b = settled()
-      probe.play = (probe.play or 0) + (probe.lastB and (a - probe.lastB) or 0)
-      probe.down, probe.up, probe.n = (probe.down or 0) + (c - a), (probe.up or 0) + (b - c), (probe.n or 0) + 1
-      probe.lastB = b
-      if n == 80 and mod.cache and mod.cache.write then
-        local old = mod.cache.read and mod.cache:read("log/leak") or ""
-        mod.cache:write("log/leak", old .. string.format(
-          "== stages, average of %d attempts (KB kept after a full collection): playing the attempt %+.1f | leaving the field %+.1f | loading the save %+.1f\n",
-          probe.n, probe.play / math.max(1, probe.n - 1), probe.down / probe.n, probe.up / probe.n))
-      end
-    end
     if not ok or not session() then
       Bot.lastError = tostring(err)
       return Bot.stop("reset_load")
@@ -1715,8 +1676,6 @@ return function(mod)
       r.tries = 0
       Bot.stats.resets = (Bot.stats.resets or 0) + 1
       pcall(perfSample, Bot.stats.resets)
-      local okLeak, errLeak = pcall(leakCheck, Bot.stats.resets)
-      if not okLeak and not perf.leakWarned then perf.leakWarned = true; mod.log:warn("leak check: %s", tostring(errLeak)) end
     end
     r.state, r.wait, r.base, r.boxed, r.since = "wait", r.delay, partyCount(), boxCount(), mark()
     r.inBoxes = boxedSet()

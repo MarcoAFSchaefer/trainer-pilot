@@ -1,24 +1,9 @@
 # Changelog
 
-## 0.30.7
+## 0.31.0
 
-- The diagnostic tells which part of older saves (party, storage, bag...) is still held in memory, if any.
-
-## 0.30.6
-
-- The diagnostic also measures, for 20 attempts, how much memory each stage of an attempt keeps: playing it, leaving the field, loading the save.
-
-## 0.30.5
-
-- The diagnostic looks further: every engine module that is certainly loaded, and besides the number of tables, how many keys, string bytes and other objects each place holds.
-
-## 0.30.4
-
-- The diagnostic of 0.30.3 froze the game (it asked for hundreds of engine modules and walked memory with no limit). It now only looks at what is already loaded and gives up after 3 seconds.
-
-## 0.30.3
-
-- Diagnostic for the slow-down of long reset hunts: at attempts 60 and 160 the hunt writes to `log/leak` how many old sessions are still alive and which places in memory grew (a pause of a few seconds each time). To be removed once the cause is fixed.
+- The memory diagnostics of 0.30.3 to 0.30.7 are gone; the light performance record (`log/perf`) stays.
+- What they found: every reload of the save leaves about 0.1 MB of Lua memory behind (measured after full collections; the same with only Trainer Pilot and Trainer Desk on). It is not save data and not held by anything a mod can reach; the game's own quick load (F2) runs the same steps. Attempts get slower as it piles up, so on very long reset hunts restart the game now and then.
 
 ## 0.30.2
 
