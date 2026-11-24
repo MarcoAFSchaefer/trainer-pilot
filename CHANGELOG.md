@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.2
+
+- Reset hunts keep a performance record (`mod_cache/trainer_pilot/log/perf`): every 25 attempts, the seconds per attempt, frames per second and the memory in use (Lua, textures, canvases, images, fonts). For finding out why a long hunt gets slower.
+
 ## 0.30.1
 
 - No more running in circles when held in place: before running or switching the bot asks the game whether it is allowed (binding moves such as Wrap, Mean Look, Ingrain, Arena Trap, Shadow Tag). When it is not, it fights on. A choice the battle menu refuses is not offered again in that battle, and after 8 failed escapes it fights.

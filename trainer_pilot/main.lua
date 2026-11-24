@@ -1624,6 +1624,29 @@ return function(mod)
     r.tries = 0
     askReload()
   end
+  -- How a long reset hunt is doing: every 25 attempts one line goes to the mod
+  -- cache (log/perf) with the pace and what the game is holding in memory, so
+  -- a hunt that gets slower shows where. Columns:
+  --   attempts | seconds since the hunt began | seconds per attempt (last 25) |
+  --   frames per second | Lua memory (MB) | texture memory (MB) | canvases | images | fonts
+  local perf = { lines = {} }
+  local function perfSample(resets)
+    local now = love.timer.getTime()
+    if resets <= 1 or not perf.start then perf.start, perf.at, perf.count = now, now, resets end
+    if resets ~= 1 and resets % 25 ~= 0 then return end
+    local span = resets - (perf.count or resets)
+    local stats = love.graphics.getStats()
+    local line = string.format("%d|%.0f|%.2f|%d|%.1f|%.1f|%d|%d|%d", resets, now - perf.start,
+      span > 0 and (now - perf.at) / span or 0, love.timer.getFPS(), collectgarbage("count") / 1024,
+      (stats.texturememory or 0) / 1048576, stats.canvases or 0, stats.images or 0, stats.fonts or 0)
+    perf.at, perf.count = now, resets
+    if resets <= 1 then perf.lines = { "v1 " .. os.date("%Y-%m-%d %H:%M") } end
+    perf.lines[#perf.lines + 1] = line
+    while #perf.lines > 400 do table.remove(perf.lines, 2) end
+    if mod.cache and mod.cache.write then mod.cache:write("log/perf", table.concat(perf.lines, "\n") .. "\n") end
+  end
+  Bot.perfLines = function() return perf.lines end
+
   function Bot.reloadNow()
     local r = Bot.running and run and run.reset
     if not (r and r.state == "reload") then return end
@@ -1649,6 +1672,7 @@ return function(mod)
       r.delay = love.math.random(0, 120)
       r.tries = 0
       Bot.stats.resets = (Bot.stats.resets or 0) + 1
+      pcall(perfSample, Bot.stats.resets)
     end
     r.state, r.wait, r.base, r.boxed, r.since = "wait", r.delay, partyCount(), boxCount(), mark()
     r.inBoxes = boxedSet()
