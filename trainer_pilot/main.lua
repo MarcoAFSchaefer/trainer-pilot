@@ -1650,46 +1650,6 @@ return function(mod)
     if mod.cache and mod.cache.write then mod.cache:write("log/perf", table.concat(perf.lines, "\n") .. "\n") end
   end
   Bot.perfLines = function() return perf.lines end
-  -- One-off experiment: which step of a reload keeps memory. Each step the
-  -- game runs to continue from the save is repeated 30 times on its own, with
-  -- a full collection before and after; what is left per call goes to log/leak.
-  local function reloadExperiment()
-    local function settled()
-      collectgarbage("collect"); collectgarbage("collect")
-      return collectgarbage("count")
-    end
-    local lines = { "== steps of a reload, KB kept per call (30 calls each, after full collections)" }
-    local function measure(name, fn)
-      local okFirst, errFirst = pcall(fn)
-      if not okFirst then lines[#lines + 1] = string.format("  %s: failed (%s)", name, tostring(errFirst)) return end
-      local base = settled()
-      for _ = 1, 30 do pcall(fn) end
-      lines[#lines + 1] = string.format("  %s: %+.1f", name, (settled() - base) / 30)
-    end
-    local okS, SaveData = pcall(require, "src.core.SaveData")
-    local okC, Schema = pcall(require, "src.core.game3.save_schema_firered")
-    local okQ, QuestLog = pcall(require, "src.ui.game3.quest_log")
-    local okO, Options = pcall(require, "src.core.game3.options")
-    if okS and type(SaveData) == "table" then
-      measure("read the save file (SaveData.load)", function() assert(SaveData.load()) end)
-      if okC and type(Schema) == "table" and Schema.fromSaveTable then
-        measure("read + build the session (Schema.fromSaveTable)", function() Schema.fromSaveTable(assert(SaveData.load())) end)
-        if okO and type(Options) == "table" and Options.bind then
-          measure("read + build + bind options", function()
-            Options.bind(Schema.fromSaveTable(assert(SaveData.load())), game.options)
-          end)
-        end
-        if okQ and type(QuestLog) == "table" and QuestLog.begin then
-          measure("read + build + quest log playback (QuestLog.begin)", function()
-            QuestLog.begin(Schema.fromSaveTable(assert(SaveData.load())))
-          end)
-        end
-      end
-    end
-    lines[#lines + 1] = "  (a whole reload keeps about +110; what the steps above do not explain is in entering the field)"
-    if mod.cache and mod.cache.write then mod.cache:write("log/leak", table.concat(lines, "\n") .. "\n") end
-  end
-
   function Bot.reloadNow()
     local r = Bot.running and run and run.reset
     if not (r and r.state == "reload") then return end
@@ -1716,7 +1676,6 @@ return function(mod)
       r.tries = 0
       Bot.stats.resets = (Bot.stats.resets or 0) + 1
       pcall(perfSample, Bot.stats.resets)
-      if Bot.stats.resets == 30 then pcall(reloadExperiment) end
     end
     r.state, r.wait, r.base, r.boxed, r.since = "wait", r.delay, partyCount(), boxCount(), mark()
     r.inBoxes = boxedSet()
@@ -3004,7 +2963,7 @@ return function(mod)
     end
     return nextHook(hookGame, event, ...)
   end, 3200)
-  local docked
+  local docked, focused
   mod.hooks:wrap("core.update", function(nextHook, updateGame, dt)
     local okReload, errReload = pcall(Bot.reloadNow)
     if not okReload then
@@ -3016,6 +2975,11 @@ return function(mod)
       local other = mod.find("trainer_desk")
       local api = other and other.exports and other.exports.dock
       if type(api) == "table" and api.api == 1 and api.active() then
+        -- a reset hunt lives on its pace: the other panels wait while it runs
+        if type(api.focus) == "function" then
+          local want = Bot.running and Bot.mode == "reset" and "trainer_pilot." or nil
+          if want ~= focused then focused = want; pcall(api.focus, want) end
+        end
         if docked ~= api then
           api.register({ id = "trainer_pilot.panel", title = "Trainer Pilot", width = panel.W, height = panel.H, pixel = 1,
             interval = 0.1, side = "right", pointer = panel.pointer, responsive = true,

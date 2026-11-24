@@ -1,8 +1,9 @@
 # Changelog
 
-## 0.31.1
+## 0.32.0
 
-- One-off experiment at attempt 30 of a reset hunt: each step of a reload is repeated on its own to see which one keeps memory (`log/leak`). A pause of a few seconds.
+- **Faster reset hunts with the other panels open.** While a reset hunt runs, Trainer Desk (0.7.0) repaints only the bot's panel at full pace; the others refresh every 5 seconds. Measured: 0.23 s per attempt with only the bot's panel against 0.30 to 0.36 s with every panel repainting.
+- The reload experiment is gone. What it found: reading the save and building the session keep almost nothing (0.5 and 5.5 KB per call); the 0.1 MB per reload is kept while the game enters the field, which a reload cannot skip.
 
 ## 0.31.0
 
