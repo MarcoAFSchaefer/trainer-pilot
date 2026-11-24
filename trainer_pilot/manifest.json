@@ -1,7 +1,7 @@
 {
   "id": "trainer_pilot",
   "name": "Trainer Pilot",
-  "version": "0.30.6",
+  "version": "0.30.7",
   "api": 3,
   "entry": "main.lua",
   "category": "GAMEPLAY",

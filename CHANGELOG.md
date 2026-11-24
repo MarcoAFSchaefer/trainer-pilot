@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.7
+
+- The diagnostic tells which part of older saves (party, storage, bag...) is still held in memory, if any.
+
 ## 0.30.6
 
 - The diagnostic also measures, for 20 attempts, how much memory each stage of an attempt keeps: playing it, leaving the field, loading the save.

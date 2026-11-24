@@ -17,11 +17,48 @@ return function(mod, rootsOf)
   local MODULES = { "src.carts.CartManifest", "src.carts.CartStore", "src.core.Base64", "src.core.Data", "src.core.DateTime", "src.core.FixedStep", "src.core.Game3", "src.core.GameVersion", "src.core.GamepadMap", "src.core.Input", "src.core.Logger", "src.core.PadHints", "src.core.Platform", "src.core.SafeArea", "src.core.SaveData", "src.core.SaveSerializer", "src.core.SessionLifecycle", "src.core.Strings", "src.core.Version", "src.core.WorkerLane", "src.core.game3.asset_decode", "src.core.game3.asset_stream", "src.core.game3.audio", "src.core.game3.bag", "src.core.game3.battle.abilities", "src.core.game3.battle.adapter", "src.core.game3.battle.anim", "src.core.game3.battle.anim_context", "src.core.game3.battle.anim_coords", "src.core.game3.battle.anim_ctx", "src.core.game3.battle.anim_pal", "src.core.game3.battle.anim_seq", "src.core.game3.battle.anim_sprites", "src.core.game3.battle.anim_tasks", "src.core.game3.battle.anim_vm", "src.core.game3.battle.ball_open", "src.core.game3.battle.battle_text", "src.core.game3.battle.bg", "src.core.game3.battle.capabilities", "src.core.game3.battle.catch_seq", "src.core.game3.battle.catching", "src.core.game3.battle.commands", "src.core.game3.battle.damage", "src.core.game3.battle.effect_ctx", "src.core.game3.battle.effect_ids", "src.core.game3.battle.effects", "src.core.game3.battle.effects._helpers", "src.core.game3.battle.effects.secondary", "src.core.game3.battle.engine", "src.core.game3.battle.evo_seq", "src.core.game3.battle.exp_seq", "src.core.game3.battle.experience", "src.core.game3.battle.healthbox", "src.core.game3.battle.held_items", "src.core.game3.battle.init", "src.core.game3.battle.intro_seq", "src.core.game3.battle.kinds", "src.core.game3.battle.learn_move", "src.core.game3.battle.level_up_streaks", "src.core.game3.battle.mod_registries", "src.core.game3.battle.mon_anim_battle", "src.core.game3.battle.moves", "src.core.game3.battle.oak_advice", "src.core.game3.battle.party_view", "src.core.game3.battle.pic_coords", "src.core.game3.battle.pokedude", "src.core.game3.battle.profile", "src.core.game3.battle.residual_handlers", "src.core.game3.battle.residuals", "src.core.game3.battle.rules", "src.core.game3.battle.shiny_seq", "src.core.game3.battle.state", "src.core.game3.battle.status", "src.core.game3.battle.switch_seq", "src.core.game3.battle.tutorial_wally", "src.core.game3.battle.types", "src.core.game3.battle.ui", "src.core.game3.bg", "src.core.game3.cache_paths", "src.core.game3.capabilities", "src.core.game3.collision", "src.core.game3.connections", "src.core.game3.constants", "src.core.game3.dataset", "src.core.game3.dex", "src.core.game3.display", "src.core.game3.evolution", "src.core.game3.field", "src.core.game3.field_modules", "src.core.game3.gba_fx", "src.core.game3.help_rules", "src.core.game3.item_use", "src.core.game3.items", "src.core.game3.items_data", "src.core.game3.m4a_mix", "src.core.game3.m4a_player", "src.core.game3.m4a_sample", "src.core.game3.m4a_seq", "src.core.game3.map", "src.core.game3.map_ids", "src.core.game3.mb", "src.core.game3.mod_audio", "src.core.game3.mon_anim", "src.core.game3.mon_anim_data", "src.core.game3.movement_types", "src.core.game3.mystery_gift", "src.core.game3.oam", "src.core.game3.object_prepare", "src.core.game3.objects", "src.core.game3.options", "src.core.game3.ow_sprites", "src.core.game3.pal_fade", "src.core.game3.palette", "src.core.game3.palette_mods", "src.core.game3.player", "src.core.game3.pokedex_data", "src.core.game3.pokemon", "src.core.game3.profile", "src.core.game3.progression", "src.core.game3.quest_log", "src.core.game3.quest_log_recorder", "src.core.game3.rom_text", "src.core.game3.rs.battle_text_policy", "src.core.game3.runtime", "src.core.game3.save_schema_firered", "src.core.game3.scripting.adapters", "src.core.game3.scripting.collision", "src.core.game3.scripting.ctx", "src.core.game3.scripting.disasm", "src.core.game3.scripting.flags", "src.core.game3.scripting.flags_table", "src.core.game3.scripting.gfx_ids", "src.core.game3.scripting.interaction_scripts", "src.core.game3.scripting.movement", "src.core.game3.scripting.natives", "src.core.game3.scripting.opcodes", "src.core.game3.scripting.opcodes_common", "src.core.game3.scripting.ops_a", "src.core.game3.scripting.ops_rse", "src.core.game3.scripting.space", "src.core.game3.scripting.stdscripts", "src.core.game3.scripting.text_ir", "src.core.game3.scripting.trainers", "src.core.game3.scripting.vm", "src.core.game3.se_ids", "src.core.game3.song_ids", "src.core.game3.storage", "src.core.game3.summary_data", "src.core.game3.task", "src.core.game3.trainer_pic", "src.core.game3.trig", "src.core.game3.virtual_objects", "src.core.game3.warm", "src.core.game3.warp_arrow", "src.import.CacheBlob", "src.import.CacheFs", "src.import.gba.battle_chrome_extract", "src.import.gba.extract_island1", "src.import.gba.extract_map_events", "src.import.gba.extract_scripts", "src.import.gba.family", "src.import.gba.lz77", "src.import.gba.map_catalog", "src.import.gba.map_sections_extract", "src.import.gba.maps", "src.import.gba.metatile", "src.import.gba.native_pack", "src.import.gba.ow_extract", "src.import.gba.palette_rules", "src.import.gba.party_chrome_extract", "src.import.gba.pokemon_extract", "src.import.gba.quantize", "src.import.gba.quantize_lab", "src.import.gba.quantize_mrf", "src.import.gba.region_map_extract", "src.import.gba.revision_view", "src.import.gba.rom", "src.import.gba.summary_chrome_extract", "src.import.gba.tileset", "src.import.gba.versions", "src.import.gba.versions_game", "src.inventory.Badges", "src.link.Json", "src.mods.AssetTransform", "src.mods.Events", "src.mods.Gen2Compat", "src.mods.Gen3Compat", "src.mods.Hooks", "src.mods.ImportAccess", "src.mods.Job", "src.mods.JobAssetIO", "src.mods.LegacyCompat", "src.mods.LoadOrder", "src.mods.Loader", "src.mods.Manifest", "src.mods.Merge", "src.mods.ModTargets", "src.mods.Net", "src.mods.Registry", "src.mods.RequiredImports", "src.mods.Runtime", "src.mods.SafePath", "src.mods.Sandbox", "src.mods.Schemas", "src.mods.Semver", "src.mods.Steps", "src.mods.StreamMD5", "src.pokemon.Boxes", "src.pokemon.Stats", "src.render.Assets", "src.render.AtlasPrefetch", "src.render.GameViewport", "src.render.PixelCanvas", "src.ui.LevelDisplay", "src.ui.ModUI", "src.ui.game3.bag_menu", "src.ui.game3.battle_chrome", "src.ui.game3.boot", "src.ui.game3.boot_modules", "src.ui.game3.choice", "src.ui.game3.chrome", "src.ui.game3.fade", "src.ui.game3.font_mods", "src.ui.game3.frlg_font", "src.ui.game3.help_system", "src.ui.game3.hud", "src.ui.game3.intro_movie", "src.ui.game3.list_menu", "src.ui.game3.message", "src.ui.game3.money_box", "src.ui.game3.mystery_gift", "src.ui.game3.naming", "src.ui.game3.naming_chrome", "src.ui.game3.new_game_scene", "src.ui.game3.option_menu", "src.ui.game3.option_rows", "src.ui.game3.party_chrome", "src.ui.game3.party_menu", "src.ui.game3.pc_menu", "src.ui.game3.pokedex", "src.ui.game3.pokedex_chrome", "src.ui.game3.quest_log", "src.ui.game3.region_map", "src.ui.game3.region_map_gpu", "src.ui.game3.region_map_position", "src.ui.game3.rs.naming_data", "src.ui.game3.save_menu", "src.ui.game3.screens", "src.ui.game3.shaderfx_menu", "src.ui.game3.shop_menu", "src.ui.game3.stack", "src.ui.game3.start_menu", "src.ui.game3.start_menu_frlg", "src.ui.game3.summary_chrome", "src.ui.game3.summary_menu", "src.ui.game3.title_screen", "src.ui.game3.trainer_card", "src.ui.game3.window", "src.ui.game3.wireless_icon" }
   local sessions = setmetatable({}, { __mode = "k" })
   local seenCount = 0
+  -- Every table of every save loaded, remembered weakly with the part of the
+  -- save it belongs to (party, storage, bag...). After a full collection, the
+  -- ones from older saves that are still alive say which part is being kept.
+  local parts = setmetatable({}, { __mode = "k" })
+  local born = setmetatable({}, { __mode = "k" })
   function Leak.note(session)
-    if type(session) == "table" and not sessions[session] then
-      seenCount = seenCount + 1
-      sessions[session] = seenCount
+    if type(session) ~= "table" or sessions[session] then return end
+    seenCount = seenCount + 1
+    sessions[session] = seenCount
+    local seen, queue, head, n = { [session] = true }, {}, 1, 0
+    for key, value in next, session do
+      if type(value) == "table" and not seen[value] then
+        seen[value] = true
+        parts[value], born[value] = tostring(key), seenCount
+        queue[#queue + 1] = value
+      end
     end
+    while queue[head] and n < 20000 do
+      local t = queue[head]; head = head + 1; n = n + 1
+      for _, value in next, t do
+        if type(value) == "table" and not seen[value] then
+          seen[value] = true
+          parts[value], born[value] = parts[t], seenCount
+          queue[#queue + 1] = value
+        end
+      end
+    end
+  end
+  local function keptParts()
+    local byPart, total = {}, 0
+    for t, part in pairs(parts) do
+      if (born[t] or seenCount) < seenCount - 1 then
+        byPart[part] = (byPart[part] or 0) + 1
+        total = total + 1
+      end
+    end
+    local list = {}
+    for part, n in pairs(byPart) do list[#list + 1] = { part, n } end
+    table.sort(list, function(a, b) return a[2] > b[2] end)
+    local out = {}
+    for i = 1, math.min(12, #list) do out[#out + 1] = list[i][1] .. "=" .. list[i][2] end
+    return total, table.concat(out, ", ")
   end
   local function write(text, fresh)
     if not (mod.cache and mod.cache.write) then return end
@@ -44,7 +81,7 @@ return function(mod, rootsOf)
   local function census(game, current)
     local visited, parentOf, keyOf, bucket, counts = {}, {}, {}, {}, {}
     local entries, bytes, others = {}, {}, {}  -- per place: keys held, bytes of strings, cdata and functions
-    visited[sessions] = true
+    visited[sessions], visited[parts], visited[born] = true, true, true
     local found, total, gaveUp = nil, 0, nil
     local started = love.timer.getTime()
     -- markers, so that a freeze can be told apart: in the modules or in the walk
@@ -119,6 +156,8 @@ return function(mod, rootsOf)
     -- written before the walk: if the walk goes wrong, this much is known
     write(string.format("== attempt %d: %d sessions seen, %d old ones still alive, Lua %.1f MB",
       resets, seenCount, alive, collectgarbage("count") / 1024), resets <= 60)
+    local kept, where = keptParts()
+    write(string.format("  tables of older saves still alive: %d%s", kept, kept > 0 and (" (" .. where .. ")") or ""))
     local counts, path, total, gaveUp, more = census(game, current)
     local lines = { "path to an old session: " .. (path or "no path found through tables"),
       "tables reached: " .. total .. (gaveUp and (" (" .. gaveUp .. ")") or "") }
