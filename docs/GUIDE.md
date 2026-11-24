@@ -139,3 +139,23 @@ The reason is always on the Control tab and in the history. The most common ones
 - Puzzle caves (Victory Road, Seafoam Islands, Icefall Cave, Pokémon Mansion, Lost Cave) are never crossed: record a healing path there.
 - In double battles only the first opponent is targeted.
 - Items from the bag restore HP and PP, but do not cure status or revive.
+
+## Reset hunts that run for hours
+
+Every reload of the save leaves a little memory behind (about 0.1 MB) that the game never gives back, and the attempts get slower as it piles up. Only restarting the game clears it. The bot can do that by itself:
+
+1. Start the game with a shortcut that goes straight into your game instead of the launcher. On Windows, a `.bat` file next to `gen1recomp.exe`:
+
+   ```
+   @echo off
+   set POKEPORT_GAME=firered
+   start "" "%~dp0gen1recomp.exe"
+   ```
+
+   (`leafgreen` for LeafGreen.)
+2. Turn on the mod option **Restart the game on long reset hunts**.
+3. Start the reset hunt as usual.
+
+When memory runs high (about every 2,000 attempts) the bot notes where the hunt is, restarts the game, chooses CONTINUE at the title and hunts on with the same counters. A find still stops the hunt and waits for you.
+
+Started from the launcher, the bot never restarts: the game would come back to the launcher with nobody to pick the game. To stop a shortcut session, stop the bot and close the window.

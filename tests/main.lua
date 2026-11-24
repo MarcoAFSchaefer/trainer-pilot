@@ -1344,6 +1344,56 @@ function love.load()
     Bot.config.targets, Bot.history = {}, {}
   end
   check(#logs == 0, "no warnings in the new checks")
+  -- long reset hunts: with memory high the game is asked to restart, and the hunt goes on afterwards
+  do
+    local restarted, wantRestart, shortcut = 0, false, nil
+    game.restartWithMods = function() restarted = restarted + 1 end
+    package.loaded["src.core.LaunchOptions"] = { resolve = function() return shortcut end }
+    local plainGet = m.options.get
+    m.options.get = function(self, k) if k == "auto_restart" then return wantRestart end return plainGet(self, k) end
+    local keepMB = Bot.restartMB
+    Bot.restartMB = 0
+    reset(); Bot.finish(); Bot.config.targets, Bot.config.huntShiny = {}, true
+    sim.static, sim.statics, sim.reloads, sim.log = "battle", {}, 0, {}
+    Bot.start("reset"); runUntil(4000, function() return (Bot.stats.resets or 0) >= 3 or not Bot.running end)
+    check(restarted == 0, "the option off: no restart")
+    Bot.stop("x"); Bot.finish(); if battle.active then endBattle() end
+    wantRestart = true
+    reset(); sim.static, sim.statics, sim.reloads, sim.log = "battle", {}, 0, {}
+    Bot.start("reset"); runUntil(4000, function() return (Bot.stats.resets or 0) >= 3 or not Bot.running end)
+    check(restarted == 0 and Bot.restartReady() == false, "started from the launcher: no restart either (nobody would pick the game again)")
+    Bot.stop("x"); Bot.finish(); if battle.active then endBattle() end
+    -- a fresh mod, as after starting by the shortcut
+    shortcut = "firered"
+    local store2 = {}
+    for k, v in pairs(cache) do store2[k] = v end
+    local m2 = newMod(store2)
+    m2.options.get = m.options.get
+    local bot2 = m2.exports.bot
+    events["game.ready"]({ game = game })
+    bot2.restartMB = 0
+    reset(); sim.static, sim.statics, sim.reloads, sim.log = "battle", {}, 0, {}
+    bot2.config.targets, bot2.config.huntShiny = {}, true
+    check(bot2.start("reset"), "the hunt starts in the fresh mod")
+    runUntil(6000, function() return restarted > 0 or not bot2.running end)
+    check(restarted == 1 and tostring(store2["reset/resume"]):match("^v1|%d+|%d+|"), "memory high and started by the shortcut: the hunt is noted and the game restarts: " .. tostring(store2["reset/resume"]))
+    local resets = bot2.stats.resets
+    bot2.stop("x"); bot2.finish(); if battle.active then endBattle() end
+    -- the new process: the mod reads the note, waits for the field and hunts on
+    local m3 = newMod(store2)
+    m3.options.get = m.options.get
+    local bot3 = m3.exports.bot
+    check(store2["reset/resume"] == "", "the note is used once")
+    events["game.ready"]({ game = game })
+    reset(); sim.static, sim.statics, sim.reloads, sim.log = "battle", {}, 0, {}
+    bot3.restartMB = 1e9
+    runUntil(4000, function() return bot3.running end)
+    check(bot3.running and bot3.mode == "reset" and bot3.stats.resets >= resets and bot3.stats.restarts == 1, "after the restart the hunt goes on with its numbers: " .. tostring(bot3.stats.resets) .. " attempts")
+    bot3.stop("x"); bot3.finish(); if battle.active then endBattle() end
+    package.loaded["src.core.LaunchOptions"] = nil
+    game.restartWithMods = nil
+  end
+
   print("ALL BOT CHECKS PASSED")
   love.event.quit()
 end

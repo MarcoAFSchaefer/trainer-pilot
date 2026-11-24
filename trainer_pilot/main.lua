@@ -22,6 +22,8 @@ return function(mod)
       { key = "language", label = "LANGUAGE", type = "choice", default = "en",
         choices = { { "ENGLISH", "en" }, { "ESPANOL", "es" }, { "PORTUGUES", "pt" }, { "JAPANESE", "ja" } },
         description = "Language of the control panel. Names that come from the game (Pokemon, moves, items) stay in the game's language." },
+      { key = "auto_restart", label = "RESTART THE GAME ON LONG RESET HUNTS", type = "toggle", default = false,
+        description = "Every reload leaves some memory behind and the hunt slows down. With this on, a reset hunt restarts the game by itself when memory runs high and carries on. Needs the game started by a shortcut that goes straight into it (POKEPORT_GAME, see the guide)." },                -- { name, kind, points = { { map, x, y, dir } } }
     })
   end
   local function language()
@@ -55,7 +57,7 @@ return function(mod)
   local ROUTES_KEY, CONFIG_KEY = "routes/v1", "config/v1"
   local KINDS = { grass = true, fish = true, seeker = true, heal = true, scent = true }
   Bot = {
-    routes = {},                -- { name, kind, points = { { map, x, y, dir } } }
+    routes = {},
     config = {
       train = nil, heal = nil,  -- route names
       healOn = true, hpPct = 30, stopLevel = 0,
@@ -1650,9 +1652,101 @@ return function(mod)
     if mod.cache and mod.cache.write then mod.cache:write("log/perf", table.concat(perf.lines, "\n") .. "\n") end
   end
   Bot.perfLines = function() return perf.lines end
+  ---------------------------------------------------------------------------
+  -- Restarting the game on long reset hunts.
+  -- Every reload keeps about 0.1 MB that never comes back, and attempts slow
+  -- down as it piles up; only a fresh process clears it. When memory runs
+  -- high, the hunt notes where it is in the mod cache (reset/resume) and asks
+  -- the game to restart itself (the same restart the mod manager uses). A game
+  -- started straight into FireRed/LeafGreen by a shortcut comes back into it;
+  -- the bot then chooses CONTINUE and goes on with the hunt (see resumeTick).
+  -- Started from the launcher, a restart would end in the launcher with
+  -- nobody to pick the game, so nothing is restarted then.
+  ---------------------------------------------------------------------------
+  Bot.restartMB = 350
+  local restart = {}
+  local function autoRestartOn()
+    local ok, value = pcall(function() return mod.options:get("auto_restart") end)
+    return ok and value == true
+  end
+  -- The game this process was started straight into, if it was.
+  local function shortcutGame()
+    local ok, Launch = pcall(require, "src.core.LaunchOptions")
+    if not (ok and type(Launch) == "table" and type(Launch.resolve) == "function") then return nil end
+    local okR, version = pcall(Launch.resolve, {})
+    return okR and type(version) == "string" and version or nil
+  end
+  Bot.restartReady = function() return autoRestartOn() and shortcutGame() ~= nil end
+  local function maybeRestart()
+    if restart.tried or not autoRestartOn() then return false end
+    if collectgarbage("count") / 1024 < Bot.restartMB then return false end
+    restart.tried = true
+    if not shortcutGame() or type(game.restartWithMods) ~= "function" then
+      mod.log:warn("memory is high but the game was not started by a shortcut straight into it: not restarting")
+      return false
+    end
+    local stats = Bot.stats
+    local seconds = stats.startedAt and floor(love.timer.getTime() - stats.startedAt) or 0
+    if mod.cache and mod.cache.write then
+      mod.cache:write("reset/resume", string.format("v1|%d|%d|%d|%d|%d|%d", os.time(), stats.resets or 0, stats.found or 0,
+        stats.lost or 0, seconds, (stats.restarts or 0) + 1))
+    end
+    restart.at = love.timer.getTime()
+    local ok = pcall(game.restartWithMods, game)
+    return ok
+  end
+  -- After a restart: CONTINUE from the title, then the hunt again.
+  local resume
+  do
+    local text = mod.cache and mod.cache.read and mod.cache:read("reset/resume")
+    local at, resets, found, lost, seconds, restarts = tostring(text or ""):match("^v1|(%d+)|(%d+)|(%d+)|(%d+)|(%d+)|(%d+)")
+    if at and os.time() - tonumber(at) < 300 then
+      resume = { resets = tonumber(resets), found = tonumber(found), lost = tonumber(lost), seconds = tonumber(seconds),
+        restarts = tonumber(restarts), ticks = 0 }
+    end
+    if text and text ~= "" and mod.cache.write then mod.cache:write("reset/resume", "") end
+  end
+  local function resumeTick(g)
+    if not resume then return end
+    resume.ticks = resume.ticks + 1
+    if resume.ticks > 60 * 180 then resume = nil return end -- three minutes and still not in the game: give up
+    local h = host()
+    if not (session() and h and h.Field and h.Field.running) then
+      -- at the title: the same as choosing CONTINUE
+      if type(g) == "table" and g.phase == "boot" and g.boot and not resume.continued then
+        resume.boot = (resume.boot or 0) + 1
+        if resume.boot >= 90 then
+          resume.continued = true
+          pcall(g._handleBootAction, g, { action = "continue" })
+        end
+      end
+      resume.field = 0
+      return
+    end
+    resume.field = (resume.field or 0) + 1
+    if resume.field < 120 then return end
+    local data = resume
+    resume = nil
+    if Bot.start("reset") then
+      local stats = Bot.stats
+      stats.resets, stats.found, stats.lost, stats.restarts = data.resets, data.found, data.lost, data.restarts
+      stats.startedAt = love.timer.getTime() - data.seconds
+    else
+      mod.log:warn("the hunt could not be resumed after the restart: %s", tostring(Bot.reason))
+    end
+  end
+  Bot.resumeTick = resumeTick
+  Bot.debugResume = function(data) resume = data end
+
   function Bot.reloadNow()
     local r = Bot.running and run and run.reset
+    if r and r.state == "restarting" then
+      -- the game should be gone by now; if it is still here, hunt on as before
+      if love.timer.getTime() - (restart.at or 0) > 20 then r.state = "reload" end
+      return
+    end
     if not (r and r.state == "reload") then return end
+    if not r.replay and maybeRestart() then r.state = "restarting" return end
     local h = host()
     release()
     local ok, err = pcall(function()
@@ -1697,6 +1791,8 @@ return function(mod)
     end
     run.battle = nil
     if not h.Field.running then return end
+    -- waiting for the reload, or for the game to restart: nothing to press
+    if r.state == "reload" or r.state == "restarting" then return end
     if r.state == "wait" then
       r.wait = r.wait - 1
       if r.wait <= 0 then r.state = "press" end
@@ -2965,6 +3061,7 @@ return function(mod)
   end, 3200)
   local docked, focused
   mod.hooks:wrap("core.update", function(nextHook, updateGame, dt)
+    pcall(resumeTick, updateGame)
     local okReload, errReload = pcall(Bot.reloadNow)
     if not okReload then
       Bot.lastError = tostring(errReload)
