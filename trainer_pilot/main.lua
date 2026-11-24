@@ -1646,6 +1646,23 @@ return function(mod)
     if mod.cache and mod.cache.write then mod.cache:write("log/perf", table.concat(perf.lines, "\n") .. "\n") end
   end
   Bot.perfLines = function() return perf.lines end
+  -- One-off: what is growing (see leak.lua). Looked at twice in a hunt.
+  local Leak
+  local function leakCheck(resets)
+    if not Leak then
+      Leak = assert(loadstring(assert(mod:read("leak.lua")), "@trainer_pilot/leak.lua"))()(mod, function()
+        local list = { ["pilot.Bot"] = Bot, ["pilot.run"] = run }
+        for _, id in ipairs({ "trainer_desk", "trainer_lens", "trainer_journey", "trainer_controls", "trainer_tactics" }) do
+          local other = mod.find and mod.find(id)
+          if other and type(other.exports) == "table" then list[id .. ".exports"] = other.exports end
+        end
+        return list
+      end)
+    end
+    Leak.note(session())
+    if resets == 60 or resets == 160 then Leak.sample(game, session(), resets) end
+  end
+  Bot.leakCheck = leakCheck
 
   function Bot.reloadNow()
     local r = Bot.running and run and run.reset
@@ -1673,6 +1690,8 @@ return function(mod)
       r.tries = 0
       Bot.stats.resets = (Bot.stats.resets or 0) + 1
       pcall(perfSample, Bot.stats.resets)
+      local okLeak, errLeak = pcall(leakCheck, Bot.stats.resets)
+      if not okLeak and not perf.leakWarned then perf.leakWarned = true; mod.log:warn("leak check: %s", tostring(errLeak)) end
     end
     r.state, r.wait, r.base, r.boxed, r.since = "wait", r.delay, partyCount(), boxCount(), mark()
     r.inBoxes = boxedSet()

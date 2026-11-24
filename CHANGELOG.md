@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.3
+
+- Diagnostic for the slow-down of long reset hunts: at attempts 60 and 160 the hunt writes to `log/leak` how many old sessions are still alive and which places in memory grew (a pause of a few seconds each time). To be removed once the cause is fixed.
+
 ## 0.30.2
 
 - Reset hunts keep a performance record (`mod_cache/trainer_pilot/log/perf`): every 25 attempts, the seconds per attempt, frames per second and the memory in use (Lua, textures, canvases, images, fonts). For finding out why a long hunt gets slower.

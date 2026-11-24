@@ -1195,6 +1195,10 @@ function love.load()
     check(Bot.reason == "hunt_found" and #session.party == 6 and boxed and boxed.shiny and Choice.open and #sim.log == 0,
       "gift to the PC: stops with the shiny in the box and the nickname question untouched: " .. tostring(Bot.reason) .. ", " .. Bot.stats.resets .. " attempts")
     check(Bot.stats.resets > 0 and sim.reloads == Bot.stats.resets, "each gift that was not the target was loaded away, without pressing on")
+    do
+      local okLeak, errLeak = pcall(Bot.leakCheck, 60)
+      check(okLeak, "the leak check runs: " .. tostring(errLeak))
+    end
     local lines = Bot.perfLines()
     check(lines[1]:match("^v1 ") and lines[2]:match("^1|") and select(2, lines[2]:gsub("|", "")) == 8, "the hunt keeps a performance record: " .. tostring(lines[2]))
     Choice.open, Choice.done = false, nil
