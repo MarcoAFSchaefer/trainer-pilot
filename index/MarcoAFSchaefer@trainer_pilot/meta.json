@@ -3,7 +3,7 @@
   "title": "Trainer Pilot",
   "author": "MarcoAFSchaefer",
   "summary": "A training and hunting bot that plays with the game's own buttons: routes, healing, EV training, shiny and IV hunting, catching, reset hunting.",
-  "version": "0.31.0",
+  "version": "0.31.1",
   "categories": [
     "GAMEPLAY",
     "QOL",

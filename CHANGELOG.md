@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.31.1
+
+- One-off experiment at attempt 30 of a reset hunt: each step of a reload is repeated on its own to see which one keeps memory (`log/leak`). A pause of a few seconds.
+
 ## 0.31.0
 
 - The memory diagnostics of 0.30.3 to 0.30.7 are gone; the light performance record (`log/perf`) stays.
