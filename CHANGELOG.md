@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.1
+
+- No more running in circles when held in place: before running or switching the bot asks the game whether it is allowed (binding moves such as Wrap, Mean Look, Ingrain, Arena Trap, Shadow Tag). When it is not, it fights on. A choice the battle menu refuses is not offered again in that battle, and after 8 failed escapes it fights.
+
 ## 0.30.0
 
 - With **Trainer Tactics** installed, the bot's battles use its brain to pick the move: the game's real damage numbers, accuracy, immunities (types and abilities such as Levitate) and knock-outs, instead of the simple power estimate. Forbidden moves stay forbidden. Without Trainer Tactics nothing changes.

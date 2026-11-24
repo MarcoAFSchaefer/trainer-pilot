@@ -1889,6 +1889,21 @@ return function(mod)
     if choice == "fight" then cat.thrown = cat.thrown + 1 end
     submit(snap, { kind = "menu", choice = choice })
   end
+  -- Whether the game would let the one out leave: "run" or "switch". Binding
+  -- moves, Mean Look, Ingrain and abilities like Arena Trap or Shadow Tag say
+  -- no; asking again changes nothing, so the only way on is to fight.
+  local function canLeave(what, st, battler)
+    local okE, Engine = pcall(require, "src.core.game3.battle.engine")
+    if not (okE and type(Engine) == "table") then return true end
+    local h = host()
+    local adapter = (h.BattleCore and h.BattleCore._adapter) or h.Battle._adapter
+    local fn = what == "run" and Engine.canRun or Engine.canSwitch
+    if type(fn) ~= "function" then return true end
+    local ok, allowed = pcall(fn, st, adapter, battler)
+    return not ok or allowed ~= false
+  end
+  Bot.canLeave = canLeave
+
   -- With Trainer Tactics installed, the move comes from its battle brain
   -- (real damage, accuracy, immunities, knock-outs) instead of bestAttack.
   -- It is asked for speed: attacks first, no status moves while one can hurt.
@@ -2081,7 +2096,17 @@ return function(mod)
           run.switchTo, run.switchTried, run.anyone, choice = other, other, true, "party"
         end
       end
-      submit(snap, { kind = "menu", choice = choice })
+      if run.leaveFor ~= st then run.leaveFor, run.runTries, run.refused = st, 0, nil end
+      if choice == "run" then
+        -- held in place, or running kept failing: fight on instead of asking for ever
+        if not canLeave("run", st, battler) or run.runTries >= 8 then choice = "fight"
+        else run.runTries = run.runTries + 1 end
+      elseif choice == "party" and not canLeave("switch", st, battler) then
+        choice, run.switchTo, run.anyone = "fight", nil, nil
+      end
+      -- a choice the game turned down this turn is not offered again
+      if choice ~= "fight" and run.refused == choice then choice = "fight" end
+      if not submit(snap, { kind = "menu", choice = choice }) and choice ~= "fight" then run.refused = choice end
     elseif snap.prompt == "moves" then
       if Bot.stats.ticks - (run.lastSubmit or -100) < 10 then return end
       run.lastSubmit = Bot.stats.ticks

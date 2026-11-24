@@ -791,6 +791,20 @@ function love.load()
   Map.current, session.map, P.cellX, P.cellY, P.moving = "MAP_ROUTE1", "MAP_ROUTE1", 3, 4, false
   Bot.start(); step(5); startBattle(true, mon(19, 5, 20)); runUntil(2000, function() return not battle.active end)
   check(count("run") == 1 and Bot.running, "on the way to the route it runs from a wild Pokémon")
+  -- held in place (Wrap, Mean Look, Arena Trap): running is not allowed, so it fights
+  do
+    local trapped = true
+    package.loaded["src.core.game3.battle.engine"] = { canRun = function() return not trapped end, canSwitch = function() return not trapped end }
+    local runs = count("run")
+    startBattle(true, mon(19, 5, 20)); runUntil(2000, function() return not battle.active end)
+    check(count("run") == runs and count("move1") >= 1 and Bot.running, "held in place, it does not keep trying to run: it fights")
+    check(Bot.canLeave("switch", battle.st, nil) == false, "and it knows it cannot switch either")
+    trapped = false
+    startBattle(true, mon(19, 5, 20)); runUntil(2000, function() return not battle.active end)
+    check(count("run") == runs + 1, "free again, it runs as before")
+    package.loaded["src.core.game3.battle.engine"] = nil
+    sim.log = { "run" }
+  end
   Bot.config.travelRun = false
   startBattle(true, mon(19, 5, 20)); runUntil(2000, function() return not battle.active end)
   check(count("run") == 1 and count("move1") >= 1, "or fights it, when set to fight")
