@@ -9,6 +9,7 @@ A training and hunting bot for Pokémon FireRed/LeafGreen on Gen1Recomp (mod API
 - **EV training:** a target per stat and per Pokémon (up to 252); runs from species that would give the wrong EVs; stops when the target is reached. Not on VS Seeker routes.
 - **Healing:** walks to the nearest Pokémon Center through a map of how the world's maps connect (or along a recorded healing path), or uses Potions and Ethers from the bag up to the limit you set.
 - **Obstacles on the way:** Surf, Cut, Rock Smash, Strength and Waterfall.
+- **Smarter battles with Trainer Tactics:** when that mod is installed, the bot asks its battle brain which move to use (real damage, accuracy, immunities, knock-outs). Optional; without it the bot uses its own simple estimate.
 - **Hunting:** up to 30 named targets that filter by species, gender, nature, ability, IVs, Hidden Power, level, held item and shiny; optional automatic catching (weaken without making it faint, sleep or paralysis, balls in your order); the Safari Zone; reset hunting for starters, gifts and legendaries.
 - **Control:** game speed while it runs, the numbers of the run, and a history of the last 40 stops.
 

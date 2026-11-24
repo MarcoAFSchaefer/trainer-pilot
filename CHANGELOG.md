@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.0
+
+- With **Trainer Tactics** installed, the bot's battles use its brain to pick the move: the game's real damage numbers, accuracy, immunities (types and abilities such as Levitate) and knock-outs, instead of the simple power estimate. Forbidden moves stay forbidden. Without Trainer Tactics nothing changes.
+
 ## 0.29.0
 
 - Reset hunting a gift with a full party (Eevee in the Celadon Condominiums, for example) works: the Pokémon goes to the PC, and the bot now looks at it there instead of pressing A through the nickname screen. Each attempt that is not a target is loaded away at once.

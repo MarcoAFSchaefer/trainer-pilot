@@ -1889,6 +1889,18 @@ return function(mod)
     if choice == "fight" then cat.thrown = cat.thrown + 1 end
     submit(snap, { kind = "menu", choice = choice })
   end
+  -- With Trainer Tactics installed, the move comes from its battle brain
+  -- (real damage, accuracy, immunities, knock-outs) instead of bestAttack.
+  -- It is asked for speed: attacks first, no status moves while one can hurt.
+  local function tacticsMove(battler)
+    local other = mod.find and mod.find("trainer_tactics")
+    local api = other and other.exports and other.exports.tactics
+    if not (type(api) == "table" and api.api == 1 and type(api.bestMove) == "function") then return nil end
+    local ok, slot = pcall(api.bestMove, { battler = battler, fast = true, noSwitch = true,
+      ban = function(mon, id) return Bot.config.banned[Bot.moveKey(mon, id)] == true end })
+    return ok and tonumber(slot) or nil
+  end
+  Bot.tacticsMove = tacticsMove
   local function battleTick()
     local h, c = host(), Bot.config
     release()
@@ -2075,7 +2087,7 @@ return function(mod)
       run.lastSubmit = Bot.stats.ticks
       local battler = st.player
       if st.double and snap.active == 2 and st.battlers then battler = st.battlers[2] or battler end
-      local slot = battler and battler.mon and bestAttack(battler.mon, st.enemy and st.enemy.mon)
+      local slot = battler and battler.mon and (tacticsMove(battler) or bestAttack(battler.mon, st.enemy and st.enemy.mon))
       if run.catching then
         -- only the move the catch plan chose; never an attack picked for damage
         if not run.catching.slot then submit(snap, { kind = "back" }) return end

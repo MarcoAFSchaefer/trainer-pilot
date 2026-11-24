@@ -1200,6 +1200,16 @@ function love.load()
   runUntil(20000, function() return not Bot.running end)
   check(Bot.reason == "caught" and Bot.stats.caught == 1 and game:saveGame() == true, "caught: the hunt ends and saving is free again")
   Bot.config.resetCatch, Bot.config.useMaster, Bot.config.catchWeaken, Bot.config.catchStatus = false, false, true, true
+  -- Trainer Tactics, when it is there, chooses the move
+  do
+    check(Bot.tacticsMove({ mon = session.party[1] }) == nil, "without Trainer Tactics the bot picks moves itself")
+    local asked
+    m.find = function(id) return id == "trainer_tactics" and { exports = { tactics = { api = 1,
+      bestMove = function(opts) asked = opts; return 3 end } } } or nil end
+    check(Bot.tacticsMove({ mon = session.party[1] }) == 3 and asked.fast == true and type(asked.ban) == "function",
+      "with it, the move comes from its brain, asked for speed and with the forbidden moves")
+    m.find = function() return nil end
+  end
   -- nothing in front of the player
   reset(); Bot.finish(); sim.static = nil
   Bot.start("reset"); runUntil(20000, function() return not Bot.running end)
