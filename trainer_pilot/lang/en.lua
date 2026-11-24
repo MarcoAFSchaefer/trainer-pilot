@@ -8,7 +8,7 @@ return {
     pc_full = "Party and PC are full: a caught Pokémon would have nowhere to go",
     repel_on = "A Repel is active: on this route it keeps Pokémon away. Wait for it to wear off",
     reset_released = "You left the reset hunt spot: hunt ended and saving allowed again",
-    reset_nothing = "Pressed A and nothing appeared: save facing the Pokémon (with room in the party)",
+    reset_nothing = "Pressed A and nothing appeared: save facing the Pokémon or the person who gives it",
     reset_trainer = "A trainer battle began: reset hunting is for wild and gift Pokémon",
     reset_load = "Could not load the save", no_save = "The game cannot be saved here right now",
     safari_over = "The Safari is over (steps or Safari Balls)",
@@ -125,7 +125,7 @@ return {
   -- Hunt: reset
   reset_title = "Reset hunting", reset_sub = "Starters, gifts, fossils and legendaries: saves in front and reloads until the target comes",
   how_it_works = "HOW IT WORKS",
-  reset_step1 = "Stand facing the Pokémon (gift: leave room in the party)",
+  reset_step1 = "Stand facing the Pokémon (a gift with a full party goes to the PC)",
   reset_step2 = "START saves the game there: that save becomes the point to go back to",
   reset_step3 = "The bot presses A, checks against the targets and reloads if it is not one",
   lock1 = "While the hunt exists the game does not save, not even on closing.",

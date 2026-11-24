@@ -8,7 +8,7 @@ return {
     pc_full = "Equipo y PC llenos: un Pokémon capturado no tendría adónde ir",
     repel_on = "Hay un Repelente activo: en esta ruta aleja a los Pokémon. Espera a que se acabe",
     reset_released = "Saliste del punto de la caza por reinicio: caza terminada y guardado permitido de nuevo",
-    reset_nothing = "Pulsé A y no apareció nada: guarda frente al Pokémon (y con sitio en el equipo)",
+    reset_nothing = "Pulsé A y no apareció nada: guarda frente al Pokémon o a quien lo da",
     reset_trainer = "Empezó un combate contra un entrenador: la caza por reinicio es para salvajes y regalos",
     reset_load = "No pude cargar la partida", no_save = "Aquí no se puede guardar ahora",
     safari_over = "Se acabó el Safari (pasos o Safari Balls)",
@@ -116,7 +116,7 @@ return {
 
   reset_title = "Caza por reinicio", reset_sub = "Iniciales, regalos, fósiles y legendarios: guarda delante y recarga hasta que salga el objetivo",
   how_it_works = "CÓMO FUNCIONA",
-  reset_step1 = "Ponte frente al Pokémon (regalo: deja sitio en el equipo)",
+  reset_step1 = "Ponte frente al Pokémon (un regalo con el equipo lleno va al PC)",
   reset_step2 = "EMPEZAR guarda la partida ahí: esa partida es el punto de vuelta",
   reset_step3 = "El bot pulsa A, lo compara con los objetivos y recarga si no lo es",
   lock1 = "Mientras exista la caza, el juego no guarda, ni siquiera al cerrar.",

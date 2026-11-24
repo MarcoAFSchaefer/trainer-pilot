@@ -273,7 +273,15 @@ function love.load()
         local v = sim.rng.value
         local made = mon(150, 50, 60, { personality = v, shiny = v % 7 == 0, defense = 50, spDef = 50 })
         sim.statics[#sim.statics + 1] = v
-        if sim.static == "gift" then
+        if sim.static == "gift" and #session.party >= 6 then
+          -- a full team: the game sends it to the PC and notes where
+          local box = session.storage.boxes[1].mons
+          local slot = 1
+          while box[slot] do slot = slot + 1 end
+          box[slot] = made
+          session.monBoxId, session.monBoxPos = 0, slot - 1
+          Choice.open = true; Choice.done = function() sim.log[#sim.log + 1] = "nicknamed" end
+        elseif sim.static == "gift" then
           session.party[#session.party + 1] = made
           Choice.open = true; Choice.done = function() sim.log[#sim.log + 1] = "nicknamed" end
         else startBattle(true, made) end
@@ -408,6 +416,10 @@ function love.load()
     if hooks["save.write"] and hooks["save.write"](function() return true end, game) == false then return false end
     sim.saves = sim.saves + 1
     sim.saved = { party = #session.party, bag = {} }
+    if session.storage then
+      sim.saved.boxed = {}
+      for slot, m in pairs(session.storage.boxes[1].mons) do sim.saved.boxed[slot] = m end
+    end
     for id, n in pairs(session.bag) do sim.saved.bag[id] = n end
     return true
   end
@@ -415,6 +427,11 @@ function love.load()
   function game:_handleBootAction()
     sim.reloads = sim.reloads + 1
     while #session.party > sim.saved.party do table.remove(session.party) end
+    if session.storage and sim.saved.boxed then
+      local fresh = {}
+      for slot, m in pairs(sim.saved.boxed) do fresh[slot] = m end
+      session.storage.boxes[1].mons = fresh
+    end
     session.bag = {}
     for id, n in pairs(sim.saved.bag) do session.bag[id] = n end
     sim.rng.value = (sim.rng.value + love.math.random(1, 60000)) % 65537
@@ -1148,6 +1165,27 @@ function love.load()
   check(Bot.reason == "hunt_found" and #session.party == before + 1 and session.party[#session.party].shiny and Choice.open,
     "gifts: stops with the shiny in the team and the nickname question untouched: " .. Bot.stats.resets .. " attempts")
   Choice.open, Choice.done = false, nil; table.remove(session.party); Bot.finish()
+  -- with a full team the gift goes to the PC: it is looked at there, the nickname still untouched
+  do
+    local keepParty = session.party
+    local full = {}
+    for index = 1, 6 do full[index] = keepParty[index] or mon(19, 5, 20) end
+    session.party = full
+    session.storage = { boxes = { { mons = { mon(19, 5, 20) } } } }
+    Storage.countTotalMons = function(st) local n = 0; for _, box in ipairs(st.boxes) do for slot = 1, 30 do if box.mons[slot] then n = n + 1 end end end return n end
+    reset(); Bot.finish()
+    sim.static, sim.statics, sim.reloads, sim.log = "gift", {}, 0, {}
+    check(Bot.start("reset"), "a reset hunt for a gift with a full team starts")
+    runUntil(200000, function() return not Bot.running end)
+    local boxed = session.storage.boxes[1].mons[session.monBoxPos + 1]
+    check(Bot.reason == "hunt_found" and #session.party == 6 and boxed and boxed.shiny and Choice.open and #sim.log == 0,
+      "gift to the PC: stops with the shiny in the box and the nickname question untouched: " .. tostring(Bot.reason) .. ", " .. Bot.stats.resets .. " attempts")
+    check(Bot.stats.resets > 0 and sim.reloads == Bot.stats.resets, "each gift that was not the target was loaded away, without pressing on")
+    Choice.open, Choice.done = false, nil
+    session.party, session.storage, session.monBoxId, session.monBoxPos = keepParty, nil, nil, nil
+    Storage.countTotalMons = nil
+    Bot.finish()
+  end
   -- with capture on, a catch that fails brings the same Pokémon back
   reset()
   session.bag[1], session.bag[4] = nil, 50

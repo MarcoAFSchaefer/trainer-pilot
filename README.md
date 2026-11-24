@@ -51,7 +51,7 @@ The panel follows the Language option (see below).
 
 ## Reset hunting
 
-Stand in front of the Pokémon (or the person who gives it), with room in the party, and start a reset hunt. The bot saves the game there, presses A, looks at what came, and loads the save again until it matches a target or is shiny. While the hunt exists, nothing else may write the save, so a bad attempt is never kept; the lock is released when the target is found or caught, when you press FINISH, or when you walk away from the spot.
+Stand in front of the Pokémon (or the person who gives it) and start a reset hunt. The bot saves the game there, presses A, looks at what came (in the party, or in the PC when a gift arrives with a full party), and loads the save again until it matches a target or is shiny. While the hunt exists, nothing else may write the save, so a bad attempt is never kept; the lock is released when the target is found or caught, when you press FINISH, or when you walk away from the spot.
 
 ## Languages
 

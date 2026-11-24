@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.29.0
+
+- Reset hunting a gift with a full party (Eevee in the Celadon Condominiums, for example) works: the Pokémon goes to the PC, and the bot now looks at it there instead of pressing A through the nickname screen. Each attempt that is not a target is loaded away at once.
+
 ## 0.28.1
 
 - Control tab: while hunting, the encounters of each target's species (whatever the target's other filters), instead of the finds; a target for any species lists every species met.

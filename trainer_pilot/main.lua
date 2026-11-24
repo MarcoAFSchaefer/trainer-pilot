@@ -1573,6 +1573,39 @@ return function(mod)
     local s = session()
     return s and type(s.party) == "table" and #s.party or 0
   end
+  -- Pokémon in the PC boxes: a gift goes there when the party is full.
+  local function boxCount()
+    local s, h = session(), host()
+    if not (s and h.Storage and type(s.storage) == "table") then return 0 end
+    return tonumber(try(h.Storage.countTotalMons, s.storage)) or 0
+  end
+  local function eachBoxed(fn)
+    local s = session()
+    local storage = s and s.storage
+    for _, box in ipairs(storage and type(storage.boxes) == "table" and storage.boxes or {}) do
+      for slot = 1, 30 do
+        local mon = type(box.mons) == "table" and box.mons[slot]
+        if type(mon) == "table" then fn(mon) end
+      end
+    end
+  end
+  local function boxedSet()
+    local set = {}
+    eachBoxed(function(mon) set[mon] = true end)
+    return set
+  end
+  -- The Pokémon the game just sent to the PC: where the game noted it, or the
+  -- one that was not there when the save was loaded.
+  local function lastBoxed(before)
+    local s = session()
+    local storage = s and s.storage
+    local box = storage and type(storage.boxes) == "table" and tonumber(s.monBoxId) and storage.boxes[s.monBoxId + 1]
+    local mon = box and type(box.mons) == "table" and tonumber(s.monBoxPos) and box.mons[s.monBoxPos + 1] or nil
+    if mon and not (before and before[mon]) then return mon end
+    local found
+    eachBoxed(function(m) if before and not before[m] then found = m end end)
+    return found
+  end
   -- The load itself happens outside the game's step (see core.update below).
   -- replay: { seed, delay, personality } to bring the very same Pokémon back.
   local function askReload(replay)
@@ -1617,7 +1650,8 @@ return function(mod)
       r.tries = 0
       Bot.stats.resets = (Bot.stats.resets or 0) + 1
     end
-    r.state, r.wait, r.base, r.since = "wait", r.delay, partyCount(), mark()
+    r.state, r.wait, r.base, r.boxed, r.since = "wait", r.delay, partyCount(), boxCount(), mark()
+    r.inBoxes = boxedSet()
     lastTap = -100
   end
   local function resetTick()
@@ -1642,9 +1676,15 @@ return function(mod)
       return
     end
     local count = partyCount()
-    if count > r.base then
-      -- a Pokémon was handed over: look at it before anything else is answered
-      local mon = session().party[count]
+    -- a Pokémon was handed over (to the party, or to the PC when the party is
+    -- full): look at it before anything else is answered, such as the nickname
+    local mon = count > r.base and session().party[count] or nil
+    if not mon and boxCount() > (r.boxed or 0) then
+      mon = lastBoxed(r.inBoxes)
+      -- something arrived but cannot be told apart: try again rather than answer prompts
+      if not mon then return askReload() end
+    end
+    if mon then
       local species = try(h.Pokemon.speciesOf, mon)
       Bot.stats.seen = Bot.stats.seen or {}
       if species then Bot.stats.seen[species] = (Bot.stats.seen[species] or 0) + 1 end

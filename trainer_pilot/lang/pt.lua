@@ -8,7 +8,7 @@ return {
     pc_full = "Equipe e PC cheios: um Pokémon capturado não teria para onde ir",
     repel_on = "Há um Repel ativo: nesta rota ele espanta os Pokémon. Espere acabar para iniciar",
     reset_released = "Você saiu do ponto da caça por reset: caça encerrada e salvamento liberado",
-    reset_nothing = "Apertei A e nada apareceu: salve de frente para o Pokémon (e com vaga na equipe)",
+    reset_nothing = "Apertei A e nada apareceu: salve de frente para o Pokémon ou para quem o entrega",
     reset_trainer = "Começou uma batalha de treinador: a caça por reset é para selvagens e presentes",
     reset_load = "Não consegui recarregar o save", no_save = "Não dá para salvar aqui agora",
     safari_over = "O Safari acabou (passos ou Safari Balls)",
@@ -116,7 +116,7 @@ return {
 
   reset_title = "Caça por reset", reset_sub = "Iniciais, presentes, fósseis e lendários: salva na frente e recarrega até vir o alvo",
   how_it_works = "COMO FUNCIONA",
-  reset_step1 = "Fique de frente para o Pokémon (presente: deixe uma vaga na equipe)",
+  reset_step1 = "Fique de frente para o Pokémon (presente com a equipe cheia vai para o PC)",
   reset_step2 = "INICIAR salva o jogo ali: esse save vira o ponto de volta",
   reset_step3 = "O bot aperta A, confere com os alvos e recarrega se não for",
   lock1 = "Enquanto a caça existir o jogo não salva, nem ao fechar.",

@@ -92,7 +92,7 @@ The bot will not start hunting with catching if you have no balls, or if your pa
 For Pokémon you meet only once.
 
 1. Create the targets on the Hunt tab (or just leave **Also stop for any SHINY** on).
-2. Stand facing the Pokémon or the person who gives it. For a gift, leave room in your party.
+2. Stand facing the Pokémon or the person who gives it. A gift received with a full party goes to the PC; the bot looks at it there just the same.
 3. **Hunt** tab > **Reset hunting >** > **SAVE HERE AND START**.
 
 The bot saves the game there, presses A, checks what came, and loads that save again until it matches.
