@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.4
+
+- The diagnostic of 0.30.3 froze the game (it asked for hundreds of engine modules and walked memory with no limit). It now only looks at what is already loaded and gives up after 3 seconds.
+
 ## 0.30.3
 
 - Diagnostic for the slow-down of long reset hunts: at attempts 60 and 160 the hunt writes to `log/leak` how many old sessions are still alive and which places in memory grew (a pause of a few seconds each time). To be removed once the cause is fixed.

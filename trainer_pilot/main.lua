@@ -1652,6 +1652,8 @@ return function(mod)
     if not Leak then
       Leak = assert(loadstring(assert(mod:read("leak.lua")), "@trainer_pilot/leak.lua"))()(mod, function()
         local list = { ["pilot.Bot"] = Bot, ["pilot.run"] = run }
+        -- the engine modules the bot already holds
+        for name, value in pairs(host()) do list["engine." .. tostring(name)] = value end
         for _, id in ipairs({ "trainer_desk", "trainer_lens", "trainer_journey", "trainer_controls", "trainer_tactics" }) do
           local other = mod.find and mod.find(id)
           if other and type(other.exports) == "table" then list[id .. ".exports"] = other.exports end

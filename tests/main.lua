@@ -1198,6 +1198,8 @@ function love.load()
     do
       local okLeak, errLeak = pcall(Bot.leakCheck, 60)
       check(okLeak, "the leak check runs: " .. tostring(errLeak))
+      local okLeak2, errLeak2 = pcall(Bot.leakCheck, 160)
+      check(okLeak2, "and compares a second time: " .. tostring(errLeak2))
     end
     local lines = Bot.perfLines()
     check(lines[1]:match("^v1 ") and lines[2]:match("^1|") and select(2, lines[2]:gsub("|", "")) == 8, "the hunt keeps a performance record: " .. tostring(lines[2]))
