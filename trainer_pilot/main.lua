@@ -1671,11 +1671,34 @@ return function(mod)
     if not (r and r.state == "reload") then return end
     local h = host()
     release()
+    -- One-off: for 20 attempts, memory after a full collection at each stage,
+    -- to tell which part of an attempt keeps what it should let go.
+    local n = (Bot.stats.resets or 0) + 1
+    local probe = (not r.replay and n > 60 and n <= 80) and perf or nil
+    local function settled()
+      collectgarbage("collect"); collectgarbage("collect")
+      return collectgarbage("count")
+    end
+    local a = probe and settled()
+    local c
     local ok, err = pcall(function()
       game:_tearDownField()
       if h.Ghosts and h.Ghosts.clear then pcall(h.Ghosts.clear) end
+      c = probe and settled()
       game:_handleBootAction({ action = "continue" })
     end)
+    if probe and a and c then
+      local b = settled()
+      probe.play = (probe.play or 0) + (probe.lastB and (a - probe.lastB) or 0)
+      probe.down, probe.up, probe.n = (probe.down or 0) + (c - a), (probe.up or 0) + (b - c), (probe.n or 0) + 1
+      probe.lastB = b
+      if n == 80 and mod.cache and mod.cache.write then
+        local old = mod.cache.read and mod.cache:read("log/leak") or ""
+        mod.cache:write("log/leak", old .. string.format(
+          "== stages, average of %d attempts (KB kept after a full collection): playing the attempt %+.1f | leaving the field %+.1f | loading the save %+.1f\n",
+          probe.n, probe.play / math.max(1, probe.n - 1), probe.down / probe.n, probe.up / probe.n))
+      end
+    end
     if not ok or not session() then
       Bot.lastError = tostring(err)
       return Bot.stop("reset_load")

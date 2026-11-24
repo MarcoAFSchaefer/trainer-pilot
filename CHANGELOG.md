@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.6
+
+- The diagnostic also measures, for 20 attempts, how much memory each stage of an attempt keeps: playing it, leaving the field, loading the save.
+
 ## 0.30.5
 
 - The diagnostic looks further: every engine module that is certainly loaded, and besides the number of tables, how many keys, string bytes and other objects each place holds.
