@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.30.5
+
+- The diagnostic looks further: every engine module that is certainly loaded, and besides the number of tables, how many keys, string bytes and other objects each place holds.
+
 ## 0.30.4
 
 - The diagnostic of 0.30.3 froze the game (it asked for hundreds of engine modules and walked memory with no limit). It now only looks at what is already loaded and gives up after 3 seconds.
