@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.33.1
+
+- Test build: the restart comes at 150 MB (a minute or two of hunting) instead of 350 MB.
+
 ## 0.33.0
 
 - **Reset hunts that run for hours by themselves.** With the new option **Restart the game on long reset hunts**, the hunt restarts the game when memory runs high (350 MB of Lua memory, about every 2,000 attempts), chooses CONTINUE and goes on, keeping its numbers. It only does so when the game was started by a shortcut that goes straight into FireRed/LeafGreen (`POKEPORT_GAME`), because a restart from the launcher would stop at the launcher. See docs/GUIDE.md.

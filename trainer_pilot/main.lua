@@ -1663,7 +1663,7 @@ return function(mod)
   -- Started from the launcher, a restart would end in the launcher with
   -- nobody to pick the game, so nothing is restarted then.
   ---------------------------------------------------------------------------
-  Bot.restartMB = 350
+  Bot.restartMB = 150 -- low for a first test in the real game (a minute or two of hunting); 350 is the working value
   local restart = {}
   local function autoRestartOn()
     local ok, value = pcall(function() return mod.options:get("auto_restart") end)
