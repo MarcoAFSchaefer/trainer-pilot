@@ -1949,9 +1949,11 @@ return function(mod)
     local base = floor(floor(floor(2 * level / 5 + 2) * attack * power / defense) / 50) + 2
     local own = try(h.Pokemon.types, try(h.Pokemon.speciesOf, mon)) or {}
     local foeTypes = try(h.Pokemon.types, try(h.Pokemon.speciesOf, foe)) or {}
-    local effect = foeTypes[1] and tonumber(try(h.Types.effectiveness, def.type, foeTypes[1], foeTypes[2])) or 100
+    -- the game gives the factor itself (1 = neutral); older builds gave it times 100
+    local effect = foeTypes[1] and tonumber(try(h.Types.effectiveness, def.type, foeTypes[1], foeTypes[2])) or 1
+    if effect > 8 then effect = effect / 100 end
     local stab = (def.type ~= nil and (def.type == own[1] or def.type == own[2])) and 1.5 or 1
-    return base * stab * (effect / 100) * 2 * 1.2
+    return base * stab * effect * 2 * 1.2
   end
   -- A move that brings the foe's HP down and cannot make it faint.
   local function safeAttack(mon, foe)

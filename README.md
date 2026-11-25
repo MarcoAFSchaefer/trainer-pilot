@@ -2,6 +2,10 @@
 
 A training and hunting bot for Pokémon FireRed/LeafGreen on Gen1Recomp (mod API 3). It plays by pressing the game's own buttons; any button you press pauses it.
 
+![Trainer Pilot: the Hunt tab with a target, next to the game](docs/images/hunt.png)
+
+![The hunt target editor: species, gender, ability, IVs and shiny](docs/images/target-editor.png)
+
 ## What it does
 
 - **Routes:** grass routes recorded by walking them; fishing, VS Seeker and Sweet Scent spots marked where you stand.
@@ -83,6 +87,10 @@ Each language is a file in `trainer_pilot/lang/` (`en.lua`, `es.lua`, `pt.lua`, 
 ## History
 
 Until version 0.24.0 this mod was called PokeBot (id `poke_bot`).
+
+## What it changes in the game
+
+[DIFFERENCES.md](DIFFERENCES.md) lists everything this mod does differently from the unmodded game.
 
 ## License
 

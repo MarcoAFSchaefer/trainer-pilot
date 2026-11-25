@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.34.1
+
+- Automatic catching: the estimate of the most damage a move can do read the type effectiveness on the wrong scale on the current game version, and came out a hundred times too low. A move could be judged safe to weaken a target with when it was strong enough to make it faint. Fixed.
+- New `DIFFERENCES.md`, and the two restart options are listed in the README.
+
 ## 0.34.0
 
 - The restart of long reset hunts goes by the clock: new option **Restart every** (10, 15, 20 or 30 minutes; 15 by default). Memory is only a safety net now (700 MB).
