@@ -1706,6 +1706,17 @@ return function(mod)
     end
     if text and text ~= "" and mod.cache.write then mod.cache:write("reset/resume", "") end
   end
+  -- "Previously on your quest...": the recap the game plays after CONTINUE.
+  -- Left the way the game leaves it when the recap ends.
+  local function skipRecap(g)
+    if not (type(g) == "table" and g.phase == "quest_log" and g.questPlayback) then return false end
+    g.questPlayback = nil
+    if g.input and g.input.reset then pcall(g.input.reset, g.input) end
+    if g.cancelPointers then pcall(g.cancelPointers, g) end
+    pcall(g._enterField, g, g.session, "continue")
+    return true
+  end
+  Bot.skipRecap = skipRecap
   local function resumeTick(g)
     if not resume then return end
     resume.ticks = resume.ticks + 1
@@ -1720,6 +1731,8 @@ return function(mod)
           pcall(g._handleBootAction, g, { action = "continue" })
         end
       end
+      -- nobody is watching the recap
+      if resume.continued then skipRecap(g) end
       resume.field = 0
       return
     end

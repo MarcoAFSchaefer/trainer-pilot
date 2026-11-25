@@ -1384,6 +1384,13 @@ function love.load()
     m3.options.get = m.options.get
     local bot3 = m3.exports.bot
     check(store2["reset/resume"] == "", "the note is used once")
+    do
+      local entered
+      local g = { phase = "quest_log", questPlayback = {}, session = session, input = { reset = function() end },
+        _enterField = function(_, s, how) entered = how end }
+      check(bot3.skipRecap(g) and g.questPlayback == nil and entered == "continue", "the recap after CONTINUE is skipped the way the game ends it")
+      check(bot3.skipRecap({ phase = "field" }) == false, "and nothing is touched outside the recap")
+    end
     events["game.ready"]({ game = game })
     reset(); sim.static, sim.statics, sim.reloads, sim.log = "battle", {}, 0, {}
     bot3.restartMB = 1e9

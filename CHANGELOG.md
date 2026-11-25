@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.33.2
+
+- After a restart the hunt skips the "Previously on your quest..." recap and goes straight to the field.
+
 ## 0.33.1
 
 - Test build: the restart comes at 150 MB (a minute or two of hunting) instead of 350 MB.
