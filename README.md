@@ -37,6 +37,8 @@ The control panel appears in the Trainer Desk docks, so Trainer Desk is needed t
 | Option | Default | What it does |
 | --- | --- | --- |
 | Language | English | Language of the control panel: ENGLISH, ESPANOL, PORTUGUES or JAPANESE. |
+| Restart the game on long reset hunts | Off | Restarts the game during a reset hunt and carries on, so hunts of many hours keep their speed. Needs the game started with a game chosen in advance; see [docs/GUIDE.md](docs/GUIDE.md). |
+| Restart every | 15 minutes | How often that restart happens: 10, 15, 20 or 30 minutes. |
 
 ## Panel
 
