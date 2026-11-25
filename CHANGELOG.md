@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.35.0
+
+- The panel carries the Pilot Badge on its tab in Trainer Desk (0.8.0 or newer; older versions just show the title).
+- The mod is now part of the **Trainer Badges**: a badge, a banner and the family case in the README.
+
 ## 0.34.1
 
 - Automatic catching: the estimate of the most damage a move can do read the type effectiveness on the wrong scale on the current game version, and came out a hundred times too low. A move could be judged safe to weaken a target with when it was strong enough to make it faint. Fixed.

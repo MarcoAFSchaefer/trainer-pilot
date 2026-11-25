@@ -3101,7 +3101,31 @@ return function(mod)
           if want ~= focused then focused = want; pcall(api.focus, want) end
         end
         if docked ~= api then
-          api.register({ id = "trainer_pilot.panel", title = "Trainer Pilot", width = panel.W, height = panel.H, pixel = 1,
+          api.register({
+            icon = (function()
+              -- The Pilot Badge, this mod's mark in the Trainer Badges family: drawn
+              -- here, on a 100-unit square, so no picture file is needed.
+              local G = love.graphics
+              local SHAPE, LIGHT, DARK = { 9,22, 52,22, 92,50, 52,78, 9,78, 37,50 }, { 9,22, 52,22, 92,50, 37,50 }, { 37,50, 92,50, 52,78, 9,78 }
+              local function fillAt(pts, x, y, k, f)
+                local t = {}
+                for i = 1, #pts, 2 do
+                  t[i], t[i + 1] = x + (50 + (pts[i] - 50) * f) * k, y + (50 + (pts[i + 1] - 50) * f) * k
+                end
+                local ok, tris = pcall(love.math.triangulate, t)
+                if ok then for _, tri in ipairs(tris) do G.polygon("fill", tri) end end
+              end
+              return function(x, y, size, alpha)
+                local k, a = size / 100, alpha or 1
+                local r, g, b, a0 = G.getColor()
+                G.setColor(0.85, 0.88, 0.92, a); fillAt(SHAPE, x, y, k, 1)
+                G.setColor(0.95, 0.72, 0.13, a); fillAt(SHAPE, x, y, k, 0.8)
+                G.setColor(1, 1, 1, 0.3 * a); fillAt(LIGHT, x, y, k, 0.8)
+                G.setColor(0, 0, 0, 0.28 * a); fillAt(DARK, x, y, k, 0.8)
+                G.setColor(r, g, b, a0)
+              end
+            end)(),
+            id = "trainer_pilot.panel", title = "Trainer Pilot", width = panel.W, height = panel.H, pixel = 1,
             interval = 0.1, side = "right", pointer = panel.pointer, responsive = true,
             -- a dock that knows responsive panels says how much room there is, and lends its colours
             draw = function(clock, w, h)
