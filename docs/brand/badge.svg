@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="-6 -6 112 112"><g transform="translate(0 0) scale(1.0)">
+<defs><linearGradient id="fpilot" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0a8"/><stop offset=".5" stop-color="#f2b821"/><stop offset="1" stop-color="#a86a05"/></linearGradient>
+<linearGradient id="rpilot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#c9d2de"/><stop offset="1" stop-color="#77828f"/></linearGradient></defs>
+<g transform="translate(0 3)" fill="#000" opacity=".35"><path d="M9 22H52L92 50L52 78H9L37 50z"/></g>
+<g fill="url(#fpilot)" stroke="url(#rpilot)" stroke-width="5" stroke-linejoin="round"><path d="M9 22H52L92 50L52 78H9L37 50z"/></g>
+<g fill="#fff" opacity=".28"><path d="M9 22H52L92 50H37z"/></g><g fill="#000" opacity=".3"><path d="M37 50H92L52 78H9z" opacity=".55"/></g>
+<g fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.2" stroke-linejoin="round"><path d="M37 50H92M30 22L58 50L30 78"/></g>
+<ellipse cx="28" cy="30" rx="7" ry="3.1" fill="#fff" opacity=".6" transform="rotate(-28 28 30)"/></g></svg>
