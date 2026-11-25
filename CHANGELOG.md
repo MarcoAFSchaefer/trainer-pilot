@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.34.0
+
+- The restart of long reset hunts goes by the clock: new option **Restart every** (10, 15, 20 or 30 minutes; 15 by default). Memory is only a safety net now (700 MB).
+
 ## 0.33.2
 
 - After a restart the hunt skips the "Previously on your quest..." recap and goes straight to the field.

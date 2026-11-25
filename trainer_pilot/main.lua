@@ -23,7 +23,10 @@ return function(mod)
         choices = { { "ENGLISH", "en" }, { "ESPANOL", "es" }, { "PORTUGUES", "pt" }, { "JAPANESE", "ja" } },
         description = "Language of the control panel. Names that come from the game (Pokemon, moves, items) stay in the game's language." },
       { key = "auto_restart", label = "RESTART THE GAME ON LONG RESET HUNTS", type = "toggle", default = false,
-        description = "Every reload leaves some memory behind and the hunt slows down. With this on, a reset hunt restarts the game by itself when memory runs high and carries on. Needs the game started by a shortcut that goes straight into it (POKEPORT_GAME, see the guide)." },                -- { name, kind, points = { { map, x, y, dir } } }
+        description = "Every reload leaves some memory behind and the hunt slows down. With this on, a reset hunt restarts the game by itself every so often and carries on. Needs the game started by a shortcut that goes straight into it (POKEPORT_GAME, see the guide)." },
+      { key = "restart_minutes", label = "RESTART EVERY", type = "choice", default = 15,
+        choices = { { "10 MIN", 10 }, { "15 MIN", 15 }, { "20 MIN", 20 }, { "30 MIN", 30 } },
+        description = "How long a reset hunt runs before the game is restarted, when the option above is on." },
     })
   end
   local function language()
@@ -1655,15 +1658,15 @@ return function(mod)
   ---------------------------------------------------------------------------
   -- Restarting the game on long reset hunts.
   -- Every reload keeps about 0.1 MB that never comes back, and attempts slow
-  -- down as it piles up; only a fresh process clears it. When memory runs
-  -- high, the hunt notes where it is in the mod cache (reset/resume) and asks
+  -- down as it piles up; only a fresh process clears it. Every few minutes
+  -- (an option), the hunt notes where it is in the mod cache (reset/resume) and asks
   -- the game to restart itself (the same restart the mod manager uses). A game
   -- started straight into FireRed/LeafGreen by a shortcut comes back into it;
   -- the bot then chooses CONTINUE and goes on with the hunt (see resumeTick).
   -- Started from the launcher, a restart would end in the launcher with
   -- nobody to pick the game, so nothing is restarted then.
   ---------------------------------------------------------------------------
-  Bot.restartMB = 150 -- low for a first test in the real game (a minute or two of hunting); 350 is the working value
+  Bot.restartMB = 700 -- whatever the clock says, never let memory go past this
   local restart = {}
   local function autoRestartOn()
     local ok, value = pcall(function() return mod.options:get("auto_restart") end)
@@ -1679,7 +1682,12 @@ return function(mod)
   Bot.restartReady = function() return autoRestartOn() and shortcutGame() ~= nil end
   local function maybeRestart()
     if restart.tried or not autoRestartOn() then return false end
-    if collectgarbage("count") / 1024 < Bot.restartMB then return false end
+    -- by the clock (the option), counted from the first attempt in this run of the game
+    local now = love.timer.getTime()
+    restart.since = restart.since or now
+    local okM, minutes = pcall(function() return mod.options:get("restart_minutes") end)
+    minutes = okM and tonumber(minutes) or 15
+    if now - restart.since < minutes * 60 and collectgarbage("count") / 1024 < Bot.restartMB then return false end
     restart.tried = true
     if not shortcutGame() or type(game.restartWithMods) ~= "function" then
       mod.log:warn("memory is high but the game was not started by a shortcut straight into it: not restarting")
