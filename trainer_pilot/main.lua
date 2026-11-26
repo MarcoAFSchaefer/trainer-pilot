@@ -250,7 +250,7 @@ return function(mod)
       "useMaster=" .. (c.useMaster and 1 or 0), "ballOrder=" .. c.ballOrder, "safariBaits=" .. c.safariBaits, "safariBalls=" .. c.safariBalls, "safariReentries=" .. c.safariReentries, "resetCatch=" .. (c.resetCatch and 1 or 0), "itemHp=" .. c.itemHp, "itemPp=" .. c.itemPp,
       "targets=" .. Bot.encodeTargets(), "evTargets=" .. Bot.encodeEvTargets(),
       -- the controller switch is this save's alone: never written where another save would start from it
-      PerSave.values and ("padOff=" .. (Bot.padOff and 1 or 0)) or nil,
+      PerSave.values and ("padFocus=" .. (Bot.padFocus and 1 or 0)) or nil,
     }, "\n")
   end
   local function decodeConfig(text)
@@ -301,7 +301,7 @@ return function(mod)
                 spe = tonumber(f[7]) or 0, spa = tonumber(f[8]) or 0, spd = tonumber(f[9]) or 0 } }
           end
         end
-      elseif key == "padOff" then Bot.padOff = value == "1"
+      elseif key == "padFocus" or key == "padOff" then Bot.padFocus = value == "1"
       elseif key == "speed" then c.speed = max(0, min(200, tonumber(value) or 0))
       elseif key == "rod" then
         local rod = tonumber(value) or 0
@@ -325,7 +325,7 @@ return function(mod)
   Bot.perSave, Bot.perSaveBind = PerSave, perSaveBind
   PerSave.listeners[#PerSave.listeners + 1] = function()
     -- another save was opened: its own settings, if it has any; else it keeps what was loaded and makes them its own
-    Bot.padOff = false
+    Bot.padFocus = false
     Bot.routes = decodeRoutes(perSaveRead(ROUTES_KEY))
     if type(PerSave.values[CONFIG_KEY]) == "string" then decodeConfig(PerSave.values[CONFIG_KEY])
     else perSaveWrite(CONFIG_KEY, encodeConfig(), true) end
@@ -3172,14 +3172,24 @@ return function(mod)
     if Bot.running and type(event) == "table" and event.phase == "pressed" then Bot.stop("player") end
     return nextHook(hookGame, event, ...)
   end
-  -- The controller can be turned off for this window (Bot.padOff, a switch on the
-  -- Control tab): a controller is read by every copy of the game that is open,
-  -- focused or not, so with two copies running the one left hunting would follow
-  -- the buttons meant for the other. Off, nothing from the controller reaches
-  -- this window's game or stops its bot. It is kept with the save's settings,
-  -- so the save left hunting opens with it off again.
+  -- The controller can be tied to the window's focus (Bot.padFocus, a switch on
+  -- the Control tab): a controller is read by every copy of the game that is
+  -- open, focused or not, so with two copies running the one left hunting would
+  -- follow the buttons meant for the other. With the switch on, the controller
+  -- reaches this window's game, and stops its bot, only while the window has
+  -- the focus: click the hunting window and the controller is its own. A button
+  -- let go always goes through, so nothing stays held when the focus leaves.
+  -- It is kept with the save's settings.
+  function Bot.windowFocused()
+    if not (love.window and love.window.hasFocus) then return true end
+    local ok, focused = pcall(love.window.hasFocus)
+    return not ok or focused ~= false
+  end
   mod.hooks:wrap("input.gamepad", function(nextHook, hookGame, event, ...)
-    if Bot.padOff then return end
+    if Bot.padFocus and not Bot.windowFocused() then
+      if type(event) == "table" and event.phase == "released" then return nextHook(hookGame, event, ...) end
+      return
+    end
     return interrupt(nextHook, hookGame, event, ...)
   end, 3000)
   mod.hooks:wrap("input.key", interrupt, 3000)

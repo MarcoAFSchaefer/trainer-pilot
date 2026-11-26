@@ -58,7 +58,7 @@ return {
   t_battles = "Combates", t_heals = "Curas", t_items = "Objetos usados", t_time = "Tiempo",
   t_attempts = "Intentos", t_targets = "Objetivos", t_found = "Encontrados", t_caught = "Capturados", t_lost = "Fallos",
   t_balls = "Balls lanzadas", t_safari_one = "Zona Safari: 1 visita pagada", t_safari_many = "Zona Safari: %d visitas pagadas", money = "$%d",
-  pad_on = "Mando: activado", pad_off = "Mando: APAGADO",
+  pad_on = "Mando: siempre", pad_off = "Mando: con foco",
   ev_of = "EV de %s", ev_fled = "   ·   huyó de %d que darían EV equivocados",
   stops_when = "Se detiene si", s_level = "nivel %d", s_shiny = "shiny", s_species = "especie de la lista",
   s_learn = "movimiento nuevo", s_evolve = "evolución", s_pp = "sin PP", s_heal = "necesita curarse", s_nothing = "nada: sigue hasta que lo detengas",

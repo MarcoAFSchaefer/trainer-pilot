@@ -392,9 +392,9 @@ return function(mod, Bot, I18n)
         end
       end
     end
-    -- the controller, for this window only (see Bot.padOff)
-    button(Bot.padOff and T("pad_off") or T("pad_on"), 360, 384, 110, 24, Bot.padOff and C.stop or C.off, function()
-      Bot.padOff = not Bot.padOff
+    -- the controller: always, or only while this window has the focus (see Bot.padFocus)
+    button(Bot.padFocus and T("pad_off") or T("pad_on"), 360, 384, 110, 24, Bot.padFocus and C.stop or C.off, function()
+      Bot.padFocus = not Bot.padFocus
       Bot.save()   -- kept with this save's settings
     end, 11, 8)
     -- what the catching has cost: balls thrown, and what the Safari Zone charged

@@ -518,17 +518,24 @@ function love.load()
   Bot.start(); runUntil(5000, function() return not Bot.running end)
   check(Bot.reason == "species" and battle.active, "a listed species stops the bot")
   endBattle(); Bot.config.species = {}
-  -- the controller turned off for this window: nothing of it reaches the game or the bot
+  -- the controller only with the window's focus: without it nothing reaches the game or the bot
   Bot.start(); step(30)
   do
-    local passed = 0
-    Bot.padOff = true
+    local passed, keepFocused = 0, Bot.windowFocused
+    Bot.padFocus = true
+    Bot.windowFocused = function() return false end
     hooks["input.gamepad"](function() passed = passed + 1 end, game, { phase = "pressed", button = "a" })
     hooks["input.gamepad"](function() passed = passed + 1 end, game, { phase = "axis", axis = "leftx", value = 1 })
-    check(Bot.running and passed == 0, "controller off: a button neither pauses the bot nor reaches the game")
-    Bot.padOff = false
+    check(Bot.running and passed == 0, "controller with focus, window not focused: a button neither pauses the bot nor reaches the game")
     hooks["input.gamepad"](function() passed = passed + 1 end, game, { phase = "released", button = "a" })
-    check(Bot.running and passed == 1, "controller on again: it goes through")
+    check(Bot.running and passed == 1, "a button let go still goes through, so nothing stays held")
+    Bot.windowFocused = function() return true end
+    hooks["input.gamepad"](function() passed = passed + 1 end, game, { phase = "pressed", button = "a" })
+    check(not Bot.running and passed == 2, "with the focus the controller is this window's: the button reaches the game and takes the controls back")
+    Bot.padFocus, Bot.windowFocused = false, keepFocused
+    Bot.start(); step(5)
+    hooks["input.gamepad"](function() passed = passed + 1 end, game, { phase = "axis", axis = "leftx", value = 1 })
+    check(passed == 3, "switch off: the controller always goes through")
     Bot.stop("player")
   end
   -- the player takes over
@@ -1383,9 +1390,11 @@ function love.load()
     local f = io.open(OUT .. "/bot-summary.png", "wb"); f:write(c:newImageData():encode("png"):getString()); f:close()
     -- the controller switch, bottom right of the tab
     panel.pointer("down", 415, 396); panel.draw()
-    check(Bot.padOff == true, "the switch on the Control tab turns the controller off for this window")
+    check(Bot.padFocus == true, "the switch on the Control tab ties the controller to the window's focus")
+    do local c2 = G.newCanvas(480, 432); G.setCanvas(c2); G.clear(0, 0, 0, 1); panel.draw(); G.setCanvas()
+      local f2 = io.open(OUT .. "/bot-summary-focus.png", "wb"); f2:write(c2:newImageData():encode("png"):getString()); f2:close() end
     panel.pointer("down", 415, 396); panel.draw()
-    check(Bot.padOff == false, "and on again")
+    check(Bot.padFocus == false, "and frees it again")
     Bot.mode, Bot.config.targets, Bot.reason = keep[1], keep[2], keep[3]
     Bot.stats.safariEntries, Bot.stats.balls = nil, 0
     Bot.stats.shinyBy = {}
@@ -1412,29 +1421,28 @@ function love.load()
       Bot.perSave.checked = -math.huge
       Bot.perSaveBind(game)
     end
-    Bot.config.hpPct, Bot.padOff = 30, false
+    Bot.config.hpPct, Bot.padFocus = 30, false
     Bot.save()
     shared = cache["config/v1"]
     open("save-a")
     check(Bot.config.hpPct == 30 and stores["save-a"] and stores["save-a"].state["config/v1"]:find("hpPct=30", 1, true) ~= nil,
       "per save: a save with nothing of its own starts from the shared settings and makes them its own")
-    Bot.config.hpPct, Bot.padOff = 55, true
+    Bot.config.hpPct, Bot.padFocus = 55, true
     Bot.save()
-    check(stores["save-a"].state["config/v1"]:find("hpPct=55", 1, true) and stores["save-a"].state["config/v1"]:find("padOff=1", 1, true)
+    check(stores["save-a"].state["config/v1"]:find("hpPct=55", 1, true) and stores["save-a"].state["config/v1"]:find("padFocus=1", 1, true)
       and cache["config/v1"] == shared, "per save: changes go to the save, and the shared settings are left as they were")
     check(type(stores["save-a"].state["routes/v1"]) == "string", "per save: recorded routes are the save's too")
     open("save-b")
     check(Bot.config.hpPct == 55 or Bot.config.hpPct == 30, "per save: another save starts from what is loaded")
-    check(Bot.padOff == false, "per save: but never with the controller off")
     Bot.config.hpPct = 70
     Bot.save()
     open("save-a")
-    check(Bot.config.hpPct == 55 and Bot.padOff == true, "per save: back on the first save, its own settings and its controller switch: " .. tostring(Bot.config.hpPct))
+    check(Bot.config.hpPct == 55 and Bot.padFocus == true, "per save: back on the first save, its own settings and its controller switch: " .. tostring(Bot.config.hpPct))
     open("save-b")
-    check(Bot.config.hpPct == 70 and Bot.padOff == false, "per save: and the second keeps its own")
+    check(Bot.config.hpPct == 70 and Bot.padFocus == false, "per save: and the second keeps its own")
     game.save, game.phase, game.session = keepSave, keepPhase, keepSession
     m.storage, Bot.perSave.values, Bot.perSave.id, Bot.perSave.session = nil, nil, nil, nil
-    Bot.config.hpPct, Bot.padOff = 30, false
+    Bot.config.hpPct, Bot.padFocus = 30, false
     Bot.reloadConfig()
   end
   check(#logs == 0, "no warnings in the new checks")
