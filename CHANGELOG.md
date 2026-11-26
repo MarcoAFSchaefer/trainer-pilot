@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.36.0
+
+- The hunt's summary on the Control tab. Each target species now shows three numbers and no name: how many were met (white), how many were caught (green) and how many catches failed (red).
+- New on the same tab: the balls thrown in the run and, in the Safari Zone, what the visits the bot paid for have cost.
+- The stop history left the panel, with the two lines of help under it. Every stop is still written to `mod_cache/trainer_pilot/log/history`, for looking into a run afterwards.
+
 ## 0.35.0
 
 - The panel carries the Pilot Badge on its tab in Trainer Desk (0.8.0 or newer; older versions just show the title).

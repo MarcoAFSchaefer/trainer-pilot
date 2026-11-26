@@ -203,49 +203,8 @@ return function(mod, Bot, I18n)
     end
   end
   local fightIcon
-  local controlView, historyPage = nil, 1
   local MODE_NAMES = setmetatable({}, { __index = function(_, key) return T("modes")[key] end })
-  local function placeName(map)
-    map = tostring(map or ""):gsub("^%u%u_", ""):gsub("_", " ")
-    return nameCase(map)
-  end
-  local function drawHistory()
-    local list = Bot.history or {}
-    box(10, 44, 460, 34, C.card, 8)
-    text(T("history_title"), 22, 51, C.text, 14)
-    line(#list == 1 and T("history_one") or F("history_many", #list), 200, 54, C.muted, 10, 150)
-    if #list > 0 then button(T("clear"), 384, 50, 78, 22, C.off, function() Bot.clearHistory() historyPage = 1 end, 11, 8) end
-    local perPage = 8
-    local pages = max(1, math.ceil(#list / perPage))
-    historyPage = max(1, min(pages, historyPage))
-    if #list == 0 then
-      centred(T("history_empty"), 10, 120, 460, 20, C.muted, 12)
-    end
-    for row = 1, perPage do
-      local e = list[(historyPage - 1) * perPage + row]
-      if e then
-        local y = 84 + (row - 1) * 36
-        local good = GOOD[e.reason]
-        local tint = e.reason == "player" and C.line or good and C.warn or C.stop
-        box(10, y, 460, 32, C.card, 6)
-        box(14, y + 6, 3, 20, tint, 2)
-        line(os.date("%d/%m %H:%M", e.at), 458 - 64, y + 3, C.muted, 10, 64, "right")
-        line(REASONS[e.reason] or e.reason, 24, y + 2, C.text, 12, 360)
-        local seconds = e.seconds or 0
-        local length = seconds >= 3600 and ("%dh%02d"):format(floor(seconds / 3600), floor(seconds / 60) % 60)
-          or ("%d:%02d"):format(floor(seconds / 60), seconds % 60)
-        local parts = { MODE_NAMES[e.mode] or "?", length, F("battles_n", e.battles) }
-        if e.route ~= "" then table.insert(parts, 2, e.route) end
-        if (e.found or 0) > 0 then parts[#parts + 1] = F("targets_n", e.found) end
-        if e.map ~= "" then parts[#parts + 1] = placeName(e.map) .. (e.x and (" (" .. e.x .. "," .. e.y .. ")") or "") end
-        line(table.concat(parts, "  ·  "), 24, y + 18, C.muted, 10, 434)
-      end
-    end
-    button(T("back"), 10, 380, 226, 30, C.off, function() controlView = nil end, 13)
-    pager(470, 382, 26, historyPage, pages, function(page) historyPage = page end)
-  end
   local function drawControl()
-    if controlView == "history" then return drawHistory() end
     local c = Bot.config
     local running = Bot.running
     local mode = Bot.mode
@@ -369,15 +328,14 @@ return function(mod, Bot, I18n)
           if target.species == 0 then anySpecies = true
           elseif not listed[target.species] then
             listed[target.species] = true
-            list[#list + 1] = { species = target.species, count = seenBy[target.species] or 0,
-              name = target.name or speciesName(target.species) }
+            list[#list + 1] = { species = target.species, count = seenBy[target.species] or 0 }
           end
         end
         if anySpecies then
           for species, count in pairs(seenBy) do
             if not listed[species] then
               listed[species] = true
-              list[#list + 1] = { species = species, count = count, name = speciesName(species) }
+              list[#list + 1] = { species = species, count = count }
             end
           end
         end
@@ -396,16 +354,25 @@ return function(mod, Bot, I18n)
             break
           end
           if entry.species ~= 0 then speciesIcon(entry.species, x, 330, 32, entry.count == 0) end
-          local count = tostring(entry.count)
+          -- met (white), then caught (green) and failed (red) under it
           local nx = x + (entry.species ~= 0 and 34 or 2)
-          line(count, nx, 329, entry.count > 0 and C.gold or C.muted, 14, x + 108 - nx, "right")
-          line(entry.name, nx, 346, entry.count > 0 and C.text or C.muted, 11, x + 108 - nx)
+          local wide = x + 108 - nx
+          local caught = (stats.caughtBy or {})[entry.species] or 0
+          local failed = (stats.lostBy or {})[entry.species] or 0
+          line(tostring(entry.count), nx, 329, entry.count > 0 and C.text or C.muted, 14, wide, "right")
+          line(tostring(caught), nx, 347, caught > 0 and C.go or C.muted, 11, wide / 2 - 3, "right")
+          line(tostring(failed), nx + wide / 2 + 3, 347, failed > 0 and C.stop or C.muted, 11, wide / 2 - 3, "right")
         end
       end
     end
-    button(F("history_btn", #(Bot.history or {})), 10, 372, 200, 22, C.off, function() controlView = "history" end, 11, 8)
-    text(T("control_hint1"), 12, 400, C.muted, 11, 456)
-    text(T("control_hint2"), 12, 414, C.muted, 11, 456)
+    -- what the catching has cost: balls thrown, and what the Safari Zone charged
+    if mode == "reset" or mode == "hunt" then
+      local visits = stats.safariEntries or 0
+      tile(T("t_balls"), stats.balls or 0, 10, 372, 110)
+      if visits > 0 then
+        tile(visits == 1 and T("t_safari_one") or F("t_safari_many", visits), F("money", visits * Bot.SAFARI_PRICE), 126, 372, 226)
+      end
+    end
   end
 
   local ROUTES_PER_PAGE = 4

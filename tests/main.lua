@@ -922,6 +922,8 @@ function love.load()
   check(Bot.running and count("caught") == 1 and count("nicknamed") == 0 and prey.hp > 0 and prey.hp <= 12 and prey.status == 1, "it weakens the target without making it faint (HP " .. prey.hp .. "/60), paralyses it, and catches it")
   check(sim.log[#sim.log - 1] == "ball3" and count("ball1") == 0 and count("move2") == 1, "the first ball in the order that is in the bag is thrown (Great, there is no Ultra); the Master Ball is left alone")
   check(Bot.stats.found == 1 and Bot.stats.caught == 1 and Bot.stats.lost == 0, "the hunt's score counts the target and the catch")
+  check((Bot.stats.caughtBy or {})[129] == 1 and (Bot.stats.lostBy or {})[129] == nil and Bot.stats.balls == count("ball3") and Bot.stats.balls >= 1,
+    "and by species, with the balls thrown: caught " .. tostring((Bot.stats.caughtBy or {})[129]) .. ", balls " .. tostring(Bot.stats.balls))
   -- a move that could make it faint is never used: straight to status and ball
   hunter.attack = 400; sim.log = {}
   prey = hunted()
@@ -986,6 +988,8 @@ function love.load()
   sim.safariFlee = true; sim.safariCatchAt = 9
   safariWild("F")
   check(Bot.stats.caught == 1 and Bot.stats.lost == 1 and Bot.stats.found == 2, "one that flees is a failure, not a catch")
+  check(Bot.stats.caughtBy[129] == 1 and Bot.stats.lostBy[129] == 1 and Bot.stats.balls == count("sball"),
+    "the species keeps its own score, and Safari Balls are counted as thrown: " .. tostring(Bot.stats.balls) .. " of " .. count("sball"))
   check(Bot.running and count("healed") == 0, "it does not leave to heal")
   sim.safari = false; runUntil(600, function() if battle.active then endBattle() end; return not Bot.running end)
   check(not Bot.running and Bot.reason == "safari_over", "when the game ends the Safari, the bot stops and says so")
@@ -1281,6 +1285,7 @@ function love.load()
     Bot.stats.seen = { [19] = 14, [16] = 6, [129] = 2 }
     Bot.mode, Bot.stats.startedAt, Bot.stats.endedAt, Bot.reason = "hunt", 0, 4000, "hunt_found"
     Bot.stats.found, Bot.stats.caught, Bot.stats.lost, Bot.stats.battles = 2, 1, 1, 87
+    Bot.stats.caughtBy, Bot.stats.lostBy, Bot.stats.balls, Bot.stats.safariEntries = { [129] = 1 }, { [129] = 1, [19] = 3 }, 23, 3
     local me1 = session.party[1]
     me1.evs = { hp = 0, atk = 40, def = 0, spe = 252, spa = 0, spd = 0 }
     Bot.config.evTargets[tostring(me1.personality)] = { atk = 252, spe = 252 }
@@ -1342,6 +1347,27 @@ function love.load()
     local f9 = io.open(OUT .. "/bot-0.24.png", "wb"); f9:write(out:newImageData():encode("png"):getString()); f9:close()
     panel.pointer("down", 100, 395); panel.draw()
     Bot.config.targets, Bot.history = {}, {}
+  end
+  do
+    -- the summary of a hunt: met, caught and failed for each species, balls and Safari money
+    local keep = { Bot.mode, Bot.config.targets, Bot.reason }
+    Bot.mode, Bot.reason, Bot.running = "hunt", nil, false
+    Bot.stats.startedAt, Bot.stats.endedAt, Bot.stats.battles = 0, 625, 3542
+    Bot.stats.found, Bot.stats.caught, Bot.stats.lost = 12, 7, 5
+    Bot.stats.seen = { [119] = 1391, [147] = 532, [79] = 136, [148] = 32 }
+    Bot.stats.caughtBy, Bot.stats.lostBy = { [147] = 6, [148] = 1 }, { [147] = 3, [148] = 2 }
+    Bot.stats.balls, Bot.stats.safariEntries = 41, 3
+    Bot.config.targets = {}
+    for index, species in ipairs({ 119, 147, 79, 148 }) do
+      Bot.config.targets[index] = { species = species, gender = "any", ivTotal = 0, ability = 0, shiny = false, natures = {}, ivs = { hp = 0, atk = 0, def = 0, spe = 0, spa = 0, spd = 0 } }
+    end
+    panel.pointer("down", 60, 20); panel.draw()
+    local c = G.newCanvas(480, 432)
+    G.setCanvas(c); G.clear(0, 0, 0, 1); panel.draw(); G.setCanvas()
+    check(panel.lastError == nil, "summary of a hunt draws: " .. tostring(panel.lastError))
+    local f = io.open(OUT .. "/bot-summary.png", "wb"); f:write(c:newImageData():encode("png"):getString()); f:close()
+    Bot.mode, Bot.config.targets, Bot.reason = keep[1], keep[2], keep[3]
+    Bot.stats.safariEntries, Bot.stats.balls = nil, 0
   end
   check(#logs == 0, "no warnings in the new checks")
   -- long reset hunts: with memory high the game is asked to restart, and the hunt goes on afterwards

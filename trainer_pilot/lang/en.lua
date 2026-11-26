@@ -53,13 +53,13 @@ return {
   no_wild_map = "No wild Pokémon on this map.", no_wild_here = "No wild Pokémon here.",
 
   -- Control
-  history_title = "Stop history", history_one = "1 stop saved", history_many = "%d stops saved", clear = "Clear",
-  history_empty = "Nothing yet: every time the bot stops, it is written down here.",
+  clear = "Clear",
   battles_n = "%d battles", targets_n = "%d target(s)",
   no_route_hint = "no route: record one in the Routes tab",
   stop_btn = "STOP", continue_btn = "CONTINUE", finish_btn = "FINISH",
   t_battles = "Battles", t_heals = "Heals", t_items = "Items used", t_time = "Time",
   t_attempts = "Attempts", t_targets = "Targets in run", t_found = "Targets found", t_caught = "Caught", t_lost = "Failures",
+  t_balls = "Balls thrown", t_safari_one = "Safari Zone: 1 visit paid", t_safari_many = "Safari Zone: %d visits paid", money = "$%d",
   ev_of = "EVs of %s", ev_fled = "   ·   ran from %d that would give the wrong EVs",
   stops_when = "Stops when", s_level = "level %d", s_shiny = "shiny", s_species = "species on the list",
   s_learn = "new move", s_evolve = "evolution", s_pp = "no PP", s_heal = "needing healing", s_nothing = "nothing: runs until you stop it",
@@ -69,9 +69,6 @@ return {
   cure_none = "no healing", cure_path = "heals along %s", cure_center = "heals at the nearest Center",
   fighting_line = "%d fighting   ·   minimum HP %d%%   ·   %s",
   speed = "Speed while running", recording_n = "Recording %s: %d steps",
-  history_btn = "Stop history (%d)",
-  control_hint1 = "Start from the Training or Hunt tab. Any button or key pauses the bot.",
-  control_hint2 = "CONTINUE resumes; FINISH ends the run and clears its numbers.",
 
   -- Routes
   recording = "Recording %s", recording_steps = "%d steps. Walk the way and then save.",

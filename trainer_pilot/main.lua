@@ -1465,6 +1465,7 @@ return function(mod)
     stats.resets, stats.itemsHp, stats.itemsPp = nil, 0, 0
     stats.battles, stats.heals, stats.seeker, stats.seen = 0, 0, 0, {}
     stats.caught, stats.lost, stats.found, stats.safariEntries, stats.hits = 0, 0, 0, nil, {}
+    stats.caughtBy, stats.lostBy, stats.balls = {}, {}, 0
     stats.startedAt, stats.endedAt = nil, nil
     return true
   end
@@ -1533,6 +1534,7 @@ return function(mod)
     else
       Bot.stats.battles, Bot.stats.heals, Bot.stats.seeker, Bot.stats.seen = 0, 0, 0, {}
       Bot.stats.caught, Bot.stats.lost, Bot.stats.found, Bot.stats.hits = 0, 0, 0, {}
+      Bot.stats.caughtBy, Bot.stats.lostBy, Bot.stats.balls, Bot.stats.safariEntries = {}, {}, 0, nil
       Bot.stats.resets = mode == "reset" and 0 or nil
       Bot.stats.itemsHp, Bot.stats.itemsPp = 0, 0
       Bot.stats.startedAt = love.timer.getTime()
@@ -1562,6 +1564,17 @@ return function(mod)
     return c.huntShiny and try(h.Pokemon.isShiny, mon) == true
   end
   Bot.wanted = wanted
+  -- How a target's catch ended, in the run and for its species.
+  local function countOutcome(species, caught)
+    local stats = Bot.stats
+    local total, by = caught and "caught" or "lost", caught and "caughtBy" or "lostBy"
+    stats[total] = (stats[total] or 0) + 1
+    if species then
+      stats[by] = stats[by] or {}
+      stats[by][species] = (stats[by][species] or 0) + 1
+    end
+  end
+  local function speciesOfMon(mon) return mon and try(host().Pokemon.speciesOf, mon) or nil end
   -- A target found: counted in the run, and by which target it matched (the
   -- first one, by its place in the list; "shiny" for a shiny that matched none).
   local function countFound(mon)
@@ -1623,9 +1636,9 @@ return function(mod)
     run.catching, run.battle = nil, nil
     r.tries = (r.tries or 0) + 1
     if r.seed and foe and r.tries <= 10 then
-      return askReload({ seed = r.seed, delay = r.delay, personality = foe.personality })
+      return askReload({ seed = r.seed, delay = r.delay, personality = foe.personality, species = speciesOfMon(foe) })
     end
-    Bot.stats.lost = (Bot.stats.lost or 0) + 1
+    countOutcome(speciesOfMon(foe), false)
     r.tries = 0
     askReload()
   end
@@ -1805,7 +1818,7 @@ return function(mod)
       local caught = result == "catch" or (result == nil and (tonumber(foe.hp) or 0) > 0)
       if caught then
         run.catching, run.battle = nil, nil
-        Bot.stats.caught = (Bot.stats.caught or 0) + 1
+        countOutcome(speciesOfMon(foe), true)
         return Bot.stop("caught")
       end
       return resetFailed(foe)
@@ -2017,6 +2030,7 @@ return function(mod)
     ui._pendingCommand = { kind = "bag", user = "player", itemId = ball }
     ui._mode = "none"
     cat.thrown = cat.thrown + 1
+    Bot.stats.balls = (Bot.stats.balls or 0) + 1
     return true
   end
 
@@ -2032,7 +2046,10 @@ return function(mod)
     cat.turn = (cat.turn or 0) + 1
     local baits, balls = Bot.config.safariBaits, Bot.config.safariBalls
     local choice = ((cat.turn - 1) % (baits + balls)) < baits and "bag" or "fight"      -- BAIT or BALL
-    if choice == "fight" then cat.thrown = cat.thrown + 1 end
+    if choice == "fight" then
+      cat.thrown = cat.thrown + 1
+      Bot.stats.balls = (Bot.stats.balls or 0) + 1
+    end
     submit(snap, { kind = "menu", choice = choice })
   end
   -- Whether the game would let the one out leave: "run" or "switch". Binding
@@ -2081,7 +2098,7 @@ return function(mod)
       local again = r.replay and r.replay.personality == foe.personality
       if r.replay and not again then
         -- the load did not bring the same one back: that target is gone
-        Bot.stats.lost = (Bot.stats.lost or 0) + 1
+        countOutcome(r.replay.species, false)
         r.tries = 0
       end
       if species and not again then Bot.stats.seen[species] = (Bot.stats.seen[species] or 0) + 1 end
@@ -2976,8 +2993,7 @@ return function(mod)
       -- the battle says how it ended; without that, still standing means the ball held
       local result = run.battle.result
       local caught = result == "catch" or (result == nil and (tonumber(run.catching.foe.hp) or 0) > 0)
-      Bot.stats.caught = (Bot.stats.caught or 0) + (caught and 1 or 0)
-      Bot.stats.lost = (Bot.stats.lost or 0) + (caught and 0 or 1)
+      countOutcome(speciesOfMon(run.catching.foe), caught)
       run.catching, run.battle = nil, nil
       if c.catchHeal then run.forceHeal = true end
       if caught and not c.catchContinue then return Bot.stop("caught") end
