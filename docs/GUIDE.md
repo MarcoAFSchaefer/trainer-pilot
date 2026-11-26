@@ -107,7 +107,7 @@ With **Try to catch it by itself** on, a failed catch reloads and brings the sam
 - The run in numbers: battles, heals, items used, time; targets found and caught when hunting.
 - While hunting, how many times the run has met each target's species, whatever the target's other filters; a target for any species lists every species met.
 - **Speed while running:** the game speed while the bot runs; your own speed comes back when it stops.
-- **Stop history:** the last 40 stops, with the reason, route, time and place, are written to `mod_cache/trainer_pilot/log/history`. They are no longer shown on the panel.
+- **Stop history:** the last 40 stops, with the reason, route, time and place, are written to the save's `log/history` (`mod_storage/<game>/<save>/trainer_pilot/log/history.bin`). They are no longer shown on the panel.
 
 ## Repels
 

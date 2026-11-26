@@ -187,6 +187,22 @@ return function(mod)
   local function cacheWrite(key, text)
     if mod.cache and mod.cache.write then mod.cache:write(key, text) end
   end
+  -- Logs of one save: plain files beside its settings
+  -- (mod_storage/<game>/<save>/trainer_pilot/<key>.bin). With no save open, the shared cache.
+  local function logWrite(key, text)
+    if PerSave.game and type(mod.storage) == "table" and mod.storage.writeBytes then
+      local ok, done = pcall(mod.storage.writeBytes, mod.storage, PerSave.game, key, text)
+      if ok and done then return end
+    end
+    cacheWrite(key, text)
+  end
+  local function logRead(key)
+    if PerSave.game and type(mod.storage) == "table" and mod.storage.readBytes then
+      local ok, text = pcall(mod.storage.readBytes, mod.storage, PerSave.game, key)
+      return ok and type(text) == "string" and text or nil
+    end
+    return cacheRead(key)
+  end
 
   local function encodeRoutes()
     local lines = {}
@@ -300,8 +316,7 @@ return function(mod)
     end
   end
   function Bot.save()
-    -- routes are knowledge of the game's maps, shared by every save; the settings are the save's
-    cacheWrite(ROUTES_KEY, encodeRoutes())
+    perSaveWrite(ROUTES_KEY, encodeRoutes(), true)
     perSaveWrite(CONFIG_KEY, encodeConfig(), true)
   end
   Bot.routes = decodeRoutes(cacheRead(ROUTES_KEY))
@@ -311,6 +326,7 @@ return function(mod)
   PerSave.listeners[#PerSave.listeners + 1] = function()
     -- another save was opened: its own settings, if it has any; else it keeps what was loaded and makes them its own
     Bot.padOff = false
+    Bot.routes = decodeRoutes(perSaveRead(ROUTES_KEY))
     if type(PerSave.values[CONFIG_KEY]) == "string" then decodeConfig(PerSave.values[CONFIG_KEY])
     else perSaveWrite(CONFIG_KEY, encodeConfig(), true) end
     if not next(Bot.config.selected) then Bot.config.selected[1] = true end
@@ -792,10 +808,16 @@ return function(mod)
   -- place to cross again, rather than trying the whole edge cell by cell.
   local CROSS_KEY = "crossings/v1"
   local crossings = {}
-  for key, x, y in tostring(cacheRead(CROSS_KEY) or ""):gmatch("([%w_>]+)=(-?%d+),(-?%d+)") do
-    crossings[key] = { x = tonumber(x), y = tonumber(y) }
-  end
   local lastMap, lastCell
+  local function crossingsLoad()
+    for key in pairs(crossings) do crossings[key] = nil end
+    for key, x, y in tostring(perSaveRead(CROSS_KEY) or ""):gmatch("([%w_>]+)=(-?%d+),(-?%d+)") do
+      crossings[key] = { x = tonumber(x), y = tonumber(y) }
+    end
+    lastMap, lastCell = nil, nil
+  end
+  crossingsLoad()
+  PerSave.listeners[#PerSave.listeners + 1] = crossingsLoad   -- another save: what that one has learned
   local function noteCrossing()
     local h = host()
     local map, x, y = (h.Map and h.Map.current) or session().map, h.P.cellX, h.P.cellY
@@ -813,7 +835,7 @@ return function(mod)
       crossings[lastMap .. ">" .. map], crossings[map .. ">" .. lastMap] = lastCell, { x = x, y = y }
       local lines = {}
       for key, cell in pairs(crossings) do lines[#lines + 1] = ("%s=%d,%d"):format(key, cell.x, cell.y) end
-      cacheWrite(CROSS_KEY, table.concat(lines, "\n"))
+      perSaveWrite(CROSS_KEY, table.concat(lines, "\n"))
     end
     lastMap, lastCell = map, { x = x, y = y }
   end
@@ -1428,11 +1450,11 @@ return function(mod)
       lines[#lines + 1] = table.concat({ e.at, historyField(e.reason), historyField(e.mode), historyField(e.route), historyField(e.map),
         e.x or 0, e.y or 0, e.battles or 0, e.seconds or 0, e.found or 0, e.caught or 0 }, "|")
     end
-    cacheWrite(HISTORY_KEY, table.concat(lines, "\n"))
+    logWrite(HISTORY_KEY, table.concat(lines, "\n"))
   end
   local function historyLoad()
     Bot.history = {}
-    for row in tostring(cacheRead(HISTORY_KEY) or ""):gmatch("[^\n]+") do
+    for row in tostring(logRead(HISTORY_KEY) or ""):gmatch("[^\n]+") do
       local f = {}
       for field in (row .. "|"):gmatch("([^|]*)|") do f[#f + 1] = field end
       if #f >= 9 then
@@ -1460,6 +1482,7 @@ return function(mod)
   end
   Bot.historyLoad = historyLoad
   pcall(historyLoad)
+  PerSave.listeners[#PerSave.listeners + 1] = function() pcall(historyLoad) end
   -- Every "blocked" stop, and every way given up on the way (Bot.note), goes
   -- to log/blocked with where the bot was heading and what failed.
   local function noteBlocked(outcome)
@@ -1467,13 +1490,13 @@ return function(mod)
       local map, x, y = position()
       local line = ("%d|%s|%s|%s|%s|%s|%s|%s"):format(os.time(), outcome, tostring(run and run.phase), tostring(map), tostring(x), tostring(y),
         tostring(Bot.trip), (tostring(Bot.blockedWhy or "?"):gsub("[|\n]", " ")))
-      local old = cacheRead("log/blocked") or ""
+      local old = logRead("log/blocked") or ""
       local lines = { line }
       for entry in old:gmatch("[^\n]+") do
         if #lines >= 30 then break end
         lines[#lines + 1] = entry
       end
-      cacheWrite("log/blocked", table.concat(lines, "\n"))
+      logWrite("log/blocked", table.concat(lines, "\n"))
     end)
   end
   Bot.noteBlocked = noteBlocked
@@ -1505,7 +1528,7 @@ return function(mod)
       -- kept on disk so a stop can be looked into afterwards
       pcall(function()
         local map, x, y = position()
-        cacheWrite("log/last", ("reason=%s\nphase=%s\nstatus=%s\nmap=%s\nx=%s\ny=%s\nbattles=%s\nerror=%s\n"):format(
+        logWrite("log/last", ("reason=%s\nphase=%s\nstatus=%s\nmap=%s\nx=%s\ny=%s\nbattles=%s\nerror=%s\n"):format(
           tostring(reason), tostring(run and run.phase), tostring(Bot.status), tostring(map), tostring(x), tostring(y),
           tostring(Bot.stats.battles), tostring(Bot.lastError)))
       end)
@@ -1720,7 +1743,7 @@ return function(mod)
     if resets <= 1 then perf.lines = { "v1 " .. os.date("%Y-%m-%d %H:%M") } end
     perf.lines[#perf.lines + 1] = line
     while #perf.lines > 400 do table.remove(perf.lines, 2) end
-    if mod.cache and mod.cache.write then mod.cache:write("log/perf", table.concat(perf.lines, "\n") .. "\n") end
+    logWrite("log/perf", table.concat(perf.lines, "\n") .. "\n")
   end
   Bot.perfLines = function() return perf.lines end
   ---------------------------------------------------------------------------
@@ -1764,8 +1787,9 @@ return function(mod)
     local stats = Bot.stats
     local seconds = stats.startedAt and floor(love.timer.getTime() - stats.startedAt) or 0
     if mod.cache and mod.cache.write then
-      mod.cache:write("reset/resume", string.format("v1|%d|%d|%d|%d|%d|%d", os.time(), stats.resets or 0, stats.found or 0,
-        stats.lost or 0, seconds, (stats.restarts or 0) + 1))
+      -- the note names its save: another copy of the game, open on another save, leaves it alone
+      mod.cache:write("reset/resume", string.format("v1|%d|%d|%d|%d|%d|%d|%s", os.time(), stats.resets or 0, stats.found or 0,
+        stats.lost or 0, seconds, (stats.restarts or 0) + 1, tostring(PerSave.id or "")))
     end
     restart.at = love.timer.getTime()
     local ok = pcall(game.restartWithMods, game)
@@ -1775,13 +1799,24 @@ return function(mod)
   local resume
   do
     local text = mod.cache and mod.cache.read and mod.cache:read("reset/resume")
-    local at, resets, found, lost, seconds, restarts = tostring(text or ""):match("^v1|(%d+)|(%d+)|(%d+)|(%d+)|(%d+)|(%d+)")
-    if at and os.time() - tonumber(at) < 300 then
+    local at, resets, found, lost, seconds, restarts, save = tostring(text or ""):match("^v1|(%d+)|(%d+)|(%d+)|(%d+)|(%d+)|(%d+)|?([%w_-]*)")
+    local fresh = at and os.time() - tonumber(at) < 300
+    if fresh then
       resume = { resets = tonumber(resets), found = tonumber(found), lost = tonumber(lost), seconds = tonumber(seconds),
-        restarts = tonumber(restarts), ticks = 0 }
+        restarts = tonumber(restarts), ticks = 0, save = save ~= "" and save or nil }
     end
-    if text and text ~= "" and mod.cache.write then mod.cache:write("reset/resume", "") end
+    -- a note for a named save stays until that save takes it up (or it goes stale)
+    if text and text ~= "" and not (fresh and resume.save) and mod.cache.write then mod.cache:write("reset/resume", "") end
   end
+  -- Which save the title screen would continue, when the game can tell.
+  local function titleSave(g)
+    if not (type(mod.storage) == "table" and mod.storage.selected) then return nil end
+    local ok, chosen = pcall(mod.storage.selected, mod.storage, g)
+    if not (ok and type(chosen) == "table" and chosen.context) then return nil end
+    local okC, context = pcall(chosen.context, chosen)
+    return okC and type(context) == "table" and context.playthroughId or nil
+  end
+  Bot.titleSave = titleSave
   -- "Previously on your quest...": the recap the game plays after CONTINUE.
   -- Left the way the game leaves it when the recap ends.
   local function skipRecap(g)
@@ -1801,6 +1836,11 @@ return function(mod)
     if not (session() and h and h.Field and h.Field.running) then
       -- at the title: the same as choosing CONTINUE
       if type(g) == "table" and g.phase == "boot" and g.boot and not resume.continued then
+        if resume.save and not resume.asked then
+          resume.asked = true
+          local chosen = titleSave(g)
+          if chosen and chosen ~= resume.save then resume = nil return end   -- the hunt of another save
+        end
         resume.boot = (resume.boot or 0) + 1
         if resume.boot >= 90 then
           resume.continued = true
@@ -1816,6 +1856,10 @@ return function(mod)
     if resume.field < 120 then return end
     local data = resume
     resume = nil
+    if data.save then
+      if PerSave.id and PerSave.id ~= data.save then return end   -- this save is not the one that was hunting
+      if mod.cache and mod.cache.write then mod.cache:write("reset/resume", "") end
+    end
     if Bot.start("reset") then
       local stats = Bot.stats
       stats.resets, stats.found, stats.lost, stats.restarts = data.resets, data.found, data.lost, data.restarts
@@ -2691,9 +2735,14 @@ return function(mod)
   -- Where the player stood when a Center healed the team, remembered per Center.
   local NURSES_KEY = "nurses/v1"
   local nurses = {}
-  for map, x, y, dir in tostring(cacheRead(NURSES_KEY) or ""):gmatch("([%w_]+)=(-?%d+),(-?%d+),(%a+)") do
-    nurses[map] = { x = tonumber(x), y = tonumber(y), dir = dir }
+  local function nursesLoad()
+    for map in pairs(nurses) do nurses[map] = nil end
+    for map, x, y, dir in tostring(perSaveRead(NURSES_KEY) or ""):gmatch("([%w_]+)=(-?%d+),(-?%d+),(%a+)") do
+      nurses[map] = { x = tonumber(x), y = tonumber(y), dir = dir }
+    end
   end
+  nursesLoad()
+  PerSave.listeners[#PerSave.listeners + 1] = nursesLoad
   -- Recorded heal routes are gone: the bot finds the Center by itself. What an
   -- old one knew, where the player stood to be healed, is kept before dropping it.
   do
@@ -2710,7 +2759,7 @@ return function(mod)
     if dropped then
       local lines = {}
       for id, n in pairs(nurses) do lines[#lines + 1] = ("%s=%d,%d,%s"):format(id, n.x, n.y, n.dir) end
-      cacheWrite(NURSES_KEY, table.concat(lines, "\n"))
+      perSaveWrite(NURSES_KEY, table.concat(lines, "\n"))
       Bot.save()
     end
   end
@@ -2725,7 +2774,7 @@ return function(mod)
         nurses[map] = { x = x, y = y, dir = h.P.facing or "up" }
         local lines = {}
         for id, n in pairs(nurses) do lines[#lines + 1] = ("%s=%d,%d,%s"):format(id, n.x, n.y, n.dir) end
-        cacheWrite(NURSES_KEY, table.concat(lines, "\n"))
+        perSaveWrite(NURSES_KEY, table.concat(lines, "\n"))
       end
     end
     wasHurt = not healed

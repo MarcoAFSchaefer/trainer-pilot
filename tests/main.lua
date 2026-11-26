@@ -1422,6 +1422,7 @@ function love.load()
     Bot.save()
     check(stores["save-a"].state["config/v1"]:find("hpPct=55", 1, true) and stores["save-a"].state["config/v1"]:find("padOff=1", 1, true)
       and cache["config/v1"] == shared, "per save: changes go to the save, and the shared settings are left as they were")
+    check(type(stores["save-a"].state["routes/v1"]) == "string", "per save: recorded routes are the save's too")
     open("save-b")
     check(Bot.config.hpPct == 55 or Bot.config.hpPct == 30, "per save: another save starts from what is loaded")
     check(Bot.padOff == false, "per save: but never with the controller off")
@@ -1490,6 +1491,35 @@ function love.load()
     runUntil(4000, function() return bot3.running end)
     check(bot3.running and bot3.mode == "reset" and bot3.stats.resets >= resets and bot3.stats.restarts == 1, "after the restart the hunt goes on with its numbers: " .. tostring(bot3.stats.resets) .. " attempts")
     bot3.stop("x"); bot3.finish(); if battle.active then endBattle() end
+    -- two copies of the game: the note names its save, and only that save takes the hunt up again
+    do
+      local keepSave, keepPhase = game.save, game.phase
+      local function storageFor(id)
+        return { context = function() return { playthroughId = id } end, read = function() return nil end, write = function() return true end }
+      end
+      store2["reset/resume"] = ("v1|%d|5|0|0|10|1|save-x"):format(os.time())
+      local m4 = newMod(store2)
+      m4.options.get = m.options.get
+      m4.storage = storageFor("save-y")
+      game.save, game.phase = { version = "firered", meta = { playthroughId = "save-y" } }, "field"
+      events["game.ready"]({ game = game })
+      reset(); sim.static, sim.statics, sim.reloads, sim.log = "battle", {}, 0, {}
+      runUntil(600, function() return m4.exports.bot.running end)
+      check(not m4.exports.bot.running and store2["reset/resume"] ~= "", "a hunt noted by another save is left alone, and its note stays for that save")
+      m4.storage = nil
+      local m5 = newMod(store2)
+      m5.options.get = m.options.get
+      m5.storage = storageFor("save-x")
+      game.save = { version = "firered", meta = { playthroughId = "save-x" } }
+      events["game.ready"]({ game = game })
+      reset(); sim.static, sim.statics, sim.reloads, sim.log = "battle", {}, 0, {}
+      m5.exports.bot.restartMB = 1e9
+      runUntil(4000, function() return m5.exports.bot.running end)
+      check(m5.exports.bot.running and m5.exports.bot.stats.resets >= 5 and store2["reset/resume"] == "", "the save that was hunting takes it up and uses the note")
+      m5.exports.bot.stop("x"); m5.exports.bot.finish(); if battle.active then endBattle() end
+      m5.storage = nil
+      game.save, game.phase = keepSave, keepPhase
+    end
     package.loaded["src.core.LaunchOptions"] = nil
     game.restartWithMods = nil
   end

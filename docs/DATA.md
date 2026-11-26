@@ -1,6 +1,8 @@
 # Settings and saved data
 
-Everything is stored with `mod.cache` under `%APPDATA%\pokemon-love2d\mod_cache\trainer_pilot\`, one file per key.
+Everything belongs to the save that is open and is kept in the game's per-save store for mods, `%APPDATA%\pokemon-love2d\mod_storage\<game>\<save>\trainer_pilot\`: `routes/v1`, `config/v1`, `crossings/v1` and `nurses/v1` together in `state.lua`, each log as a plain file (`log/history.bin` and so on).
+
+The shared `mod.cache` (`%APPDATA%\pokemon-love2d\mod_cache\trainer_pilot\`, one file per key) is where a save with nothing of its own starts from, and what is used while no save is open. `reset/resume`, the note left before the game restarts itself, stays there and names its save.
 
 | Key | Content |
 | --- | --- |
