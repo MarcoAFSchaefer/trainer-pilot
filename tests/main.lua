@@ -1390,6 +1390,52 @@ function love.load()
     Bot.stats.safariEntries, Bot.stats.balls = nil, 0
     Bot.stats.shinyBy = {}
   end
+  do
+    -- settings belong to the save that is open: the game's per-save store for mods
+    local stores, writes = {}, 0
+    m.storage = {
+      context = function(_, g) return { playthroughId = g.save.meta.playthroughId } end,
+      read = function(_, g, key) local t = stores[g.save.meta.playthroughId] return t and t[key] or nil end,
+      write = function(_, g, key, value)
+        local id = g.save.meta.playthroughId
+        stores[id] = stores[id] or {}
+        local copy = {} for k, v in pairs(value) do copy[k] = v end
+        stores[id][key], writes = copy, writes + 1
+        return true
+      end,
+    }
+    local keepSave, keepPhase, keepSession = game.save, game.phase, game.session
+    local shared
+    local function open(id)
+      game.save, game.phase = { version = "firered", meta = { playthroughId = id } }, "field"
+      game.session = setmetatable({}, { __index = keepSession })   -- a load: a new session object
+      Bot.perSave.checked = -math.huge
+      Bot.perSaveBind(game)
+    end
+    Bot.config.hpPct, Bot.padOff = 30, false
+    Bot.save()
+    shared = cache["config/v1"]
+    open("save-a")
+    check(Bot.config.hpPct == 30 and stores["save-a"] and stores["save-a"].state["config/v1"]:find("hpPct=30", 1, true) ~= nil,
+      "per save: a save with nothing of its own starts from the shared settings and makes them its own")
+    Bot.config.hpPct, Bot.padOff = 55, true
+    Bot.save()
+    check(stores["save-a"].state["config/v1"]:find("hpPct=55", 1, true) and stores["save-a"].state["config/v1"]:find("padOff=1", 1, true)
+      and cache["config/v1"] == shared, "per save: changes go to the save, and the shared settings are left as they were")
+    open("save-b")
+    check(Bot.config.hpPct == 55 or Bot.config.hpPct == 30, "per save: another save starts from what is loaded")
+    check(Bot.padOff == false, "per save: but never with the controller off")
+    Bot.config.hpPct = 70
+    Bot.save()
+    open("save-a")
+    check(Bot.config.hpPct == 55 and Bot.padOff == true, "per save: back on the first save, its own settings and its controller switch: " .. tostring(Bot.config.hpPct))
+    open("save-b")
+    check(Bot.config.hpPct == 70 and Bot.padOff == false, "per save: and the second keeps its own")
+    game.save, game.phase, game.session = keepSave, keepPhase, keepSession
+    m.storage, Bot.perSave.values, Bot.perSave.id, Bot.perSave.session = nil, nil, nil, nil
+    Bot.config.hpPct, Bot.padOff = 30, false
+    Bot.reloadConfig()
+  end
   check(#logs == 0, "no warnings in the new checks")
   -- long reset hunts: with memory high the game is asked to restart, and the hunt goes on afterwards
   do

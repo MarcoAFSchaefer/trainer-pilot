@@ -5,7 +5,8 @@
 - The hunt's summary on the Control tab. Each target species now shows three numbers and no name: how many were met (white), how many were caught (green) and how many catches failed (red).
 - New on the same tab: the balls thrown in the run and, in the Safari Zone, what the visits the bot paid for have cost.
 - A gold star marks the species a shiny was met of (with a number when there was more than one), and that species comes first in the row, target or not.
-- A switch for the controller on the Control tab, for playing with two copies of the game open. A controller is read by every copy, focused or not, so the copy left hunting used to follow the buttons meant for the other one, and stop its bot. Turned off, nothing from the controller reaches that window. It is not saved: every window starts with the controller on.
+- A switch for the controller on the Control tab, for playing with two copies of the game open. A controller is read by every copy, focused or not, so the copy left hunting used to follow the buttons meant for the other one, and stop its bot. Turned off, nothing from the controller reaches that window. It is kept with the save, so the save left hunting opens with it off again; a save that never touched it has the controller on.
+- The settings now belong to the save that is open: hunt targets, who fights, EV targets, the routes chosen, speed and the controller switch are kept in the game's per-save store for mods. They used to sit in one file shared by every save and by every copy of the game that was open, so two copies overwrote each other's settings. A save with nothing of its own yet starts from the settings there were. Recorded routes, the crossings between maps and the nurses are knowledge of the game's maps and stay shared; so do the logs.
 - The stop history left the panel, with the two lines of help under it. Every stop is still written to `mod_cache/trainer_pilot/log/history`, for looking into a run afterwards.
 
 ## 0.35.0

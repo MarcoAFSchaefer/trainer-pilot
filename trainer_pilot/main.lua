@@ -136,6 +136,49 @@ return function(mod)
   local function cacheRead(key)
     return mod.cache and mod.cache.read and mod.cache:read(key) or nil
   end
+  -- What belongs to one save. The game keeps a store for mods per save slot
+  -- (mod.storage); the shared cache (mod.cache) is the same for every save and
+  -- for every copy of the game that is open. A save that has nothing of its own
+  -- yet starts from what the shared cache holds, and from then on keeps its own.
+  local PerSave = { values = nil, id = nil, checked = -math.huge, listeners = {}, dirty = false, wrote = 0 }
+  local function perSaveFlush()
+    if not (PerSave.dirty and PerSave.values) then return end
+    PerSave.dirty, PerSave.wrote = false, love.timer.getTime()
+    pcall(mod.storage.write, mod.storage, PerSave.game, "state", PerSave.values)
+  end
+  -- Which save is open: asked when the session changes, at most every few seconds.
+  local function perSaveBind(g)
+    if not (type(g) == "table" and g.session and g.save and g.phase == "field"
+        and type(mod.storage) == "table" and mod.storage.context and mod.storage.read and mod.storage.write) then return end
+    local now = love.timer.getTime()
+    if PerSave.dirty and now - PerSave.wrote >= 2 then perSaveFlush() end
+    if PerSave.session == g.session or now - PerSave.checked < 5 then return end
+    PerSave.session, PerSave.checked = g.session, now
+    local ok, context = pcall(mod.storage.context, mod.storage, g)
+    local id = ok and type(context) == "table" and context.playthroughId or nil
+    if id and id ~= PerSave.id then
+      perSaveFlush()
+      local okRead, data = pcall(mod.storage.read, mod.storage, g, "state")
+      PerSave.id, PerSave.game, PerSave.values = id, g, okRead and type(data) == "table" and data or {}
+      for _, listener in ipairs(PerSave.listeners) do pcall(listener) end
+    end
+  end
+  local function perSaveRead(key)
+    local own = PerSave.values and PerSave.values[key]
+    if type(own) == "string" then return own end
+    return mod.cache and mod.cache.read and mod.cache:read(key) or nil
+  end
+  -- `soon`: written at once (a setting); otherwise within two seconds (a counter).
+  local function perSaveWrite(key, text, soon)
+    if not PerSave.values then
+      -- no save open yet: the shared cache, as it always was
+      if mod.cache and mod.cache.write then mod.cache:write(key, text) end
+      return
+    end
+    if PerSave.values[key] == text then return end
+    PerSave.values[key], PerSave.dirty = text, true
+    if soon then perSaveFlush() end
+  end
   -- A way given up on during a trip, written to log/blocked (see noteBlocked).
   function Bot.note(why)
     Bot.blockedWhy = why
@@ -190,6 +233,8 @@ return function(mod)
       "catchStatus=" .. (c.catchStatus and 1 or 0), "catchHeal=" .. (c.catchHeal and 1 or 0),
       "useMaster=" .. (c.useMaster and 1 or 0), "ballOrder=" .. c.ballOrder, "safariBaits=" .. c.safariBaits, "safariBalls=" .. c.safariBalls, "safariReentries=" .. c.safariReentries, "resetCatch=" .. (c.resetCatch and 1 or 0), "itemHp=" .. c.itemHp, "itemPp=" .. c.itemPp,
       "targets=" .. Bot.encodeTargets(), "evTargets=" .. Bot.encodeEvTargets(),
+      -- the controller switch is this save's alone: never written where another save would start from it
+      PerSave.values and ("padOff=" .. (Bot.padOff and 1 or 0)) or nil,
     }, "\n")
   end
   local function decodeConfig(text)
@@ -240,6 +285,7 @@ return function(mod)
                 spe = tonumber(f[7]) or 0, spa = tonumber(f[8]) or 0, spd = tonumber(f[9]) or 0 } }
           end
         end
+      elseif key == "padOff" then Bot.padOff = value == "1"
       elseif key == "speed" then c.speed = max(0, min(200, tonumber(value) or 0))
       elseif key == "rod" then
         local rod = tonumber(value) or 0
@@ -254,12 +300,21 @@ return function(mod)
     end
   end
   function Bot.save()
+    -- routes are knowledge of the game's maps, shared by every save; the settings are the save's
     cacheWrite(ROUTES_KEY, encodeRoutes())
-    cacheWrite(CONFIG_KEY, encodeConfig())
+    perSaveWrite(CONFIG_KEY, encodeConfig(), true)
   end
   Bot.routes = decodeRoutes(cacheRead(ROUTES_KEY))
   decodeConfig(cacheRead(CONFIG_KEY))
-  function Bot.reloadConfig() decodeConfig(cacheRead(CONFIG_KEY)) end
+  function Bot.reloadConfig() decodeConfig(perSaveRead(CONFIG_KEY)) end
+  Bot.perSave, Bot.perSaveBind = PerSave, perSaveBind
+  PerSave.listeners[#PerSave.listeners + 1] = function()
+    -- another save was opened: its own settings, if it has any; else it keeps what was loaded and makes them its own
+    Bot.padOff = false
+    if type(PerSave.values[CONFIG_KEY]) == "string" then decodeConfig(PerSave.values[CONFIG_KEY])
+    else perSaveWrite(CONFIG_KEY, encodeConfig(), true) end
+    if not next(Bot.config.selected) then Bot.config.selected[1] = true end
+  end
   if not next(Bot.config.selected) then Bot.config.selected[1] = true end
 
   function Bot.route(name)
@@ -3072,8 +3127,8 @@ return function(mod)
   -- Control tab): a controller is read by every copy of the game that is open,
   -- focused or not, so with two copies running the one left hunting would follow
   -- the buttons meant for the other. Off, nothing from the controller reaches
-  -- this window's game or stops its bot. It is not saved: a new window starts
-  -- with the controller on.
+  -- this window's game or stops its bot. It is kept with the save's settings,
+  -- so the save left hunting opens with it off again.
   mod.hooks:wrap("input.gamepad", function(nextHook, hookGame, event, ...)
     if Bot.padOff then return end
     return interrupt(nextHook, hookGame, event, ...)
@@ -3118,6 +3173,7 @@ return function(mod)
   end, 3200)
   local docked, focused
   mod.hooks:wrap("core.update", function(nextHook, updateGame, dt)
+    pcall(perSaveBind, updateGame)
     pcall(resumeTick, updateGame)
     local okReload, errReload = pcall(Bot.reloadNow)
     if not okReload then
