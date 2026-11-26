@@ -60,6 +60,7 @@ return {
   t_battles = "Battles", t_heals = "Heals", t_items = "Items used", t_time = "Time",
   t_attempts = "Attempts", t_targets = "Targets in run", t_found = "Targets found", t_caught = "Caught", t_lost = "Failures",
   t_balls = "Balls thrown", t_safari_one = "Safari Zone: 1 visit paid", t_safari_many = "Safari Zone: %d visits paid", money = "$%d",
+  pad_on = "Controller: on", pad_off = "Controller: OFF",
   ev_of = "EVs of %s", ev_fled = "   ·   ran from %d that would give the wrong EVs",
   stops_when = "Stops when", s_level = "level %d", s_shiny = "shiny", s_species = "species on the list",
   s_learn = "new move", s_evolve = "evolution", s_pp = "no PP", s_heal = "needing healing", s_nothing = "nothing: runs until you stop it",

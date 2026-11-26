@@ -1465,7 +1465,7 @@ return function(mod)
     stats.resets, stats.itemsHp, stats.itemsPp = nil, 0, 0
     stats.battles, stats.heals, stats.seeker, stats.seen = 0, 0, 0, {}
     stats.caught, stats.lost, stats.found, stats.safariEntries, stats.hits = 0, 0, 0, nil, {}
-    stats.caughtBy, stats.lostBy, stats.balls = {}, {}, 0
+    stats.caughtBy, stats.lostBy, stats.balls, stats.shinyBy = {}, {}, 0, {}
     stats.startedAt, stats.endedAt = nil, nil
     return true
   end
@@ -1534,7 +1534,7 @@ return function(mod)
     else
       Bot.stats.battles, Bot.stats.heals, Bot.stats.seeker, Bot.stats.seen = 0, 0, 0, {}
       Bot.stats.caught, Bot.stats.lost, Bot.stats.found, Bot.stats.hits = 0, 0, 0, {}
-      Bot.stats.caughtBy, Bot.stats.lostBy, Bot.stats.balls, Bot.stats.safariEntries = {}, {}, 0, nil
+      Bot.stats.caughtBy, Bot.stats.lostBy, Bot.stats.balls, Bot.stats.safariEntries, Bot.stats.shinyBy = {}, {}, 0, nil, {}
       Bot.stats.resets = mode == "reset" and 0 or nil
       Bot.stats.itemsHp, Bot.stats.itemsPp = 0, 0
       Bot.stats.startedAt = love.timer.getTime()
@@ -1845,6 +1845,10 @@ return function(mod)
       local species = try(h.Pokemon.speciesOf, mon)
       Bot.stats.seen = Bot.stats.seen or {}
       if species then Bot.stats.seen[species] = (Bot.stats.seen[species] or 0) + 1 end
+      if species and try(host().Pokemon.isShiny, mon) == true then
+        Bot.stats.shinyBy = Bot.stats.shinyBy or {}
+        Bot.stats.shinyBy[species] = (Bot.stats.shinyBy[species] or 0) + 1
+      end
       if wanted(mon) then
         countFound(mon)
         return Bot.stop("hunt_found")
@@ -2120,6 +2124,11 @@ return function(mod)
         local species = try(h.Pokemon.speciesOf, foe)
         Bot.stats.seen = Bot.stats.seen or {}
         if species then Bot.stats.seen[species] = (Bot.stats.seen[species] or 0) + 1 end
+        -- a shiny one, target or not: noted for its species
+        if species and try(h.Pokemon.isShiny, foe) == true then
+          Bot.stats.shinyBy = Bot.stats.shinyBy or {}
+          Bot.stats.shinyBy[species] = (Bot.stats.shinyBy[species] or 0) + 1
+        end
       end
       if foe and st.wild and Bot.mode == "hunt" then
         for _, target in ipairs(c.targets) do
@@ -3059,7 +3068,16 @@ return function(mod)
     if Bot.running and type(event) == "table" and event.phase == "pressed" then Bot.stop("player") end
     return nextHook(hookGame, event, ...)
   end
-  mod.hooks:wrap("input.gamepad", interrupt, 3000)
+  -- The controller can be turned off for this window (Bot.padOff, a switch on the
+  -- Control tab): a controller is read by every copy of the game that is open,
+  -- focused or not, so with two copies running the one left hunting would follow
+  -- the buttons meant for the other. Off, nothing from the controller reaches
+  -- this window's game or stops its bot. It is not saved: a new window starts
+  -- with the controller on.
+  mod.hooks:wrap("input.gamepad", function(nextHook, hookGame, event, ...)
+    if Bot.padOff then return end
+    return interrupt(nextHook, hookGame, event, ...)
+  end, 3000)
   mod.hooks:wrap("input.key", interrupt, 3000)
 
   -- While a reset hunt owns the save, nothing may be written over it: the game

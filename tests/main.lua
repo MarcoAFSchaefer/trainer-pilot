@@ -511,12 +511,26 @@ function love.load()
   sim.nextWild = mon(19, 5, 20, { shiny = true })
   Bot.start(); runUntil(5000, function() return not Bot.running end)
   check(Bot.reason == "shiny" and battle.active and battle.st.enemy.mon.hp == 20, "a shiny stops the bot before it does anything")
+  check((Bot.stats.shinyBy or {})[19] == 1, "and the run notes which species the shiny was")
   endBattle()
   Bot.config.species[16] = true
   sim.nextWild = mon(16, 5, 20)
   Bot.start(); runUntil(5000, function() return not Bot.running end)
   check(Bot.reason == "species" and battle.active, "a listed species stops the bot")
   endBattle(); Bot.config.species = {}
+  -- the controller turned off for this window: nothing of it reaches the game or the bot
+  Bot.start(); step(30)
+  do
+    local passed = 0
+    Bot.padOff = true
+    hooks["input.gamepad"](function() passed = passed + 1 end, game, { phase = "pressed", button = "a" })
+    hooks["input.gamepad"](function() passed = passed + 1 end, game, { phase = "axis", axis = "leftx", value = 1 })
+    check(Bot.running and passed == 0, "controller off: a button neither pauses the bot nor reaches the game")
+    Bot.padOff = false
+    hooks["input.gamepad"](function() passed = passed + 1 end, game, { phase = "released", button = "a" })
+    check(Bot.running and passed == 1, "controller on again: it goes through")
+    Bot.stop("player")
+  end
   -- the player takes over
   Bot.start(); step(30)
   hooks["input.gamepad"](function() end, game, { phase = "pressed", button = "a" })
@@ -1357,6 +1371,7 @@ function love.load()
     Bot.stats.seen = { [119] = 1391, [147] = 532, [79] = 136, [148] = 32 }
     Bot.stats.caughtBy, Bot.stats.lostBy = { [147] = 6, [148] = 1 }, { [147] = 3, [148] = 2 }
     Bot.stats.balls, Bot.stats.safariEntries = 41, 3
+    Bot.stats.shinyBy = { [148] = 1 }
     Bot.config.targets = {}
     for index, species in ipairs({ 119, 147, 79, 148 }) do
       Bot.config.targets[index] = { species = species, gender = "any", ivTotal = 0, ability = 0, shiny = false, natures = {}, ivs = { hp = 0, atk = 0, def = 0, spe = 0, spa = 0, spd = 0 } }
@@ -1366,8 +1381,14 @@ function love.load()
     G.setCanvas(c); G.clear(0, 0, 0, 1); panel.draw(); G.setCanvas()
     check(panel.lastError == nil, "summary of a hunt draws: " .. tostring(panel.lastError))
     local f = io.open(OUT .. "/bot-summary.png", "wb"); f:write(c:newImageData():encode("png"):getString()); f:close()
+    -- the controller switch, bottom right of the tab
+    panel.pointer("down", 415, 396); panel.draw()
+    check(Bot.padOff == true, "the switch on the Control tab turns the controller off for this window")
+    panel.pointer("down", 415, 396); panel.draw()
+    check(Bot.padOff == false, "and on again")
     Bot.mode, Bot.config.targets, Bot.reason = keep[1], keep[2], keep[3]
     Bot.stats.safariEntries, Bot.stats.balls = nil, 0
+    Bot.stats.shinyBy = {}
   end
   check(#logs == 0, "no warnings in the new checks")
   -- long reset hunts: with memory high the game is asked to restart, and the hunt goes on afterwards

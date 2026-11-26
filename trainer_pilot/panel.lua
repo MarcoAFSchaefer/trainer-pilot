@@ -92,6 +92,17 @@ return function(mod, Bot, I18n)
     centred(label, x, y, w, h, C.text, size or 13)
     hit(x, y, w, h, action)
   end
+  local SHINY = hex("ffd24a")
+  local function star(cx, cy, r, color)
+    local points = {}
+    for i = 0, 9 do
+      local angle, radius = -math.pi / 2 + i * math.pi / 5, (i % 2 == 0) and r or r * 0.45
+      points[#points + 1] = cx + math.cos(angle) * radius
+      points[#points + 1] = cy + math.sin(angle) * radius
+    end
+    G.setColor(color[1], color[2], color[3], color[4] or 1)
+    for _, tri in ipairs(love.math.triangulate(points)) do G.polygon("fill", tri) end
+  end
   local function toggle(label, x, y, w, value, action)
     box(x, y, w, 26, C.card)
     local f = font(13 * kf)
@@ -339,7 +350,17 @@ return function(mod, Bot, I18n)
             end
           end
         end
+        -- a species a shiny was met of is always on the list, and comes first
+        local shinyBy = stats.shinyBy or {}
+        for species in pairs(shinyBy) do
+          if not listed[species] then
+            listed[species] = true
+            list[#list + 1] = { species = species, count = seenBy[species] or 0 }
+          end
+        end
         table.sort(list, function(a, b)
+          local sa, sb = (shinyBy[a.species] or 0) > 0, (shinyBy[b.species] or 0) > 0
+          if sa ~= sb then return sa end
           if a.count ~= b.count then return a.count > b.count end
           return a.species < b.species
         end)
@@ -360,11 +381,21 @@ return function(mod, Bot, I18n)
           local caught = (stats.caughtBy or {})[entry.species] or 0
           local failed = (stats.lostBy or {})[entry.species] or 0
           line(tostring(entry.count), nx, 329, entry.count > 0 and C.text or C.muted, 14, wide, "right")
+          -- a shiny of this species was met: a gold star, with how many when more than one
+          local shinies = (stats.shinyBy or {})[entry.species] or 0
+          if shinies > 0 then
+            star(nx + 7, 337, 7, SHINY)
+            if shinies > 1 then line(tostring(shinies), nx + 16, 330, SHINY, 11, 20) end
+          end
           line(tostring(caught), nx, 347, caught > 0 and C.go or C.muted, 11, wide / 2 - 3, "right")
           line(tostring(failed), nx + wide / 2 + 3, 347, failed > 0 and C.stop or C.muted, 11, wide / 2 - 3, "right")
         end
       end
     end
+    -- the controller, for this window only (see Bot.padOff)
+    button(Bot.padOff and T("pad_off") or T("pad_on"), 360, 384, 110, 24, Bot.padOff and C.stop or C.off, function()
+      Bot.padOff = not Bot.padOff
+    end, 11, 8)
     -- what the catching has cost: balls thrown, and what the Safari Zone charged
     if mode == "reset" or mode == "hunt" then
       local visits = stats.safariEntries or 0

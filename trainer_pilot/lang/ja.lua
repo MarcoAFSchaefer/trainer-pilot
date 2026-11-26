@@ -58,6 +58,7 @@ return {
   t_battles = "バトル", t_heals = "回復", t_items = "使った道具", t_time = "時間",
   t_attempts = "試行", t_targets = "ターゲット", t_found = "見つけた", t_caught = "捕まえた", t_lost = "失敗",
   t_balls = "投げたボール", t_safari_one = "サファリゾーン: 1回分", t_safari_many = "サファリゾーン: %d回分", money = "%d円",
+  pad_on = "コントローラー: オン", pad_off = "コントローラー: オフ",
   ev_of = "%sの努力値", ev_fled = "   ·   違う努力値になる%d匹から逃げた",
   stops_when = "止まる条件", s_level = "Lv %d", s_shiny = "色違い", s_species = "リストのポケモン",
   s_learn = "新しいわざ", s_evolve = "進化", s_pp = "PP切れ", s_heal = "回復が必要", s_nothing = "なし: 止めるまで続けます",
